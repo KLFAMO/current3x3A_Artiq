@@ -33,6 +33,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define BUFFER_SIZE 100
+#define MAX(a,b) (((a)>(b))?(a):(b))
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -67,7 +68,28 @@ const osThreadAttr_t interfaceTask_attributes = {
   .priority = (osPriority_t) osPriorityLow,
 };
 /* USER CODE BEGIN PV */
+char spi_buf[30];
+int state;
+uint16_t d_in;
 
+/* create an array for DAC's values:
+
+		row 0 for DAC1: X1, Y1, Z1, T1
+		row 1 for DAC2: X2, Y2, Z2, T2
+		row 2 for DAC3: X3, Y3, Z3, T3
+
+		X,Y,Z are voltage value in volt and T is time in ms
+
+*/
+double DAC[4][4] = {
+		{0.0, 0.0, 0.0, 0.0},
+		{0.1, 0.1, 0.1, 1.0},
+		{-0.1, -0.1, -0.1, 1.0},
+		{0.0, 0.0, 0.0, 1.0}
+};
+const double v_ref = 3.0;
+const int max_dec = 65536;
+int last_r = 3;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -86,7 +108,10 @@ void StartDefaultTask(void *argument);
 void StartInterfaceTask(void *argument);
 
 /* USER CODE BEGIN PFP */
-
+void SendSpiMesToDac(uint32_t);
+void SetDAC(uint8_t channel, uint16_t value);
+void SendToDAC(int r);
+int ExtractMessage(char* msg);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -135,6 +160,20 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
+  // DAC - Reset select.
+	// If RSTSEL is low, input coding is binary;
+	// if high = 2's complement
+	HAL_GPIO_WritePin(RSTSEL_GPIO_Port, RSTSEL_Pin, GPIO_PIN_RESET);
+
+	SetDAC(0, 0);
+	SetDAC(1, 1);
+	SetDAC(2, 2);
+	SetDAC(3, 3);
+
+	// DIR SET means: positive and DIR RESET means: negative
+	HAL_GPIO_WritePin(DIR1_GPIO_Port, DIR1_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(DIR2_GPIO_Port, DIR2_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(DIR3_GPIO_Port, DIR3_Pin, GPIO_PIN_SET);
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -427,11 +466,11 @@ static void MX_SPI2_Init(void)
   hspi2.Instance = SPI2;
   hspi2.Init.Mode = SPI_MODE_MASTER;
   hspi2.Init.Direction = SPI_DIRECTION_2LINES_TXONLY;
-  hspi2.Init.DataSize = SPI_DATASIZE_4BIT;
+  hspi2.Init.DataSize = SPI_DATASIZE_24BIT;
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
-  hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi2.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi2.Init.NSS = SPI_NSS_HARD_OUTPUT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -782,7 +821,34 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void SendSpiMesToDac(uint32_t message){
+	/*
+	 * New function for new DAC converter on version 2 of board
+	 */
+	HAL_StatusTypeDef status;
+	uint8_t dataToSend[3] = {
+			(message >> 0) & 0xFF,
+	        (message >> 8) & 0xFF,
+	        (message >> 16)& 0xFF
+	};
+	status = HAL_SPI_Transmit(&hspi2, dataToSend, 1, 100);
+	if (status != HAL_OK) {
+	}
+}
 
+void SetDAC(uint8_t channel, uint16_t value){
+	/*
+	 * New function for new DAC converter on version 2 of board
+	 */
+	uint32_t message = 0x00000000;
+	message = message | (value & 0xFFFF);
+	message = message | (((uint32_t)channel & 0b11) << 17);
+	SendSpiMesToDac(message);
+
+	// LDAC load DACs, rising edge triggered loads all DAC register
+	HAL_GPIO_WritePin(LDAC_GPIO_Port, LDAC_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(LDAC_GPIO_Port, LDAC_Pin, GPIO_PIN_RESET);
+}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
