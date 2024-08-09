@@ -165,10 +165,14 @@ int main(void)
 	// if high = 2's complement
 	HAL_GPIO_WritePin(RSTSEL_GPIO_Port, RSTSEL_Pin, GPIO_PIN_RESET);
 
+	// if SET = work, if RESET = set all outputs to 0
+	// (this pin was solderd to 3.3V on board in 3x3A_v2 version because of bug
+	HAL_GPIO_WritePin(DACRST_GPIO_Port, DACRST_Pin, GPIO_PIN_SET);
+
 	SetDAC(0, 0);
-	SetDAC(1, 1);
-	SetDAC(2, 2);
-	SetDAC(3, 3);
+	SetDAC(1, 0);
+	SetDAC(2, 0);
+	SetDAC(3, 0);
 
 	// DIR SET means: positive and DIR RESET means: negative
 	HAL_GPIO_WritePin(DIR1_GPIO_Port, DIR1_Pin, GPIO_PIN_SET);
@@ -823,7 +827,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void SendSpiMesToDac(uint32_t message){
 	/*
-	 * New function for new DAC converter on version 2 of board
+	 * send prepared message to DAC
 	 */
 	HAL_StatusTypeDef status;
 	uint8_t dataToSend[3] = {
@@ -837,9 +841,7 @@ void SendSpiMesToDac(uint32_t message){
 }
 
 void SetDAC(uint8_t channel, uint16_t value){
-	/*
-	 * New function for new DAC converter on version 2 of board
-	 */
+	/*set DAC, channel (0,1,2,3), value - in bits*/
 	uint32_t message = 0x00000000;
 	message = message | (value & 0xFFFF);
 	message = message | (((uint32_t)channel & 0b11) << 17);
