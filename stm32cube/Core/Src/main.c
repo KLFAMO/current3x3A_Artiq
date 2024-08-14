@@ -90,6 +90,7 @@ double DAC[4][4] = {
 const double v_ref = 3.0;
 const int max_dec = 65536;
 int last_r = 3;
+char test='A';
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -820,11 +821,144 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF12_SDIO1;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	/*
+	 * In Artiq version, there are 7 input TTLs.
+	 * TTL1, TTL2 are used to set state (TODO: add TTL3-6)
+	 * TTL0 is used to trigger state change
+	 */
+
+  if(GPIO_Pin==TTL0_Pin)
+  {
+	  if(HAL_GPIO_ReadPin(GPIOD, TTL1_Pin) == GPIO_PIN_RESET &&
+		 HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_RESET
+	  ){
+		  // state 1 row 0 in the DAC's array
+		  if(last_r != 0){
+			  SendToDAC(0);
+		  }
+	  }else if(HAL_GPIO_ReadPin(GPIOE, TTL1_Pin) == GPIO_PIN_SET &&
+			  HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_RESET
+	  ){
+		  // state 2 row 1 in the DAC's array
+		  if(last_r != 1){
+			  SendToDAC(1);
+		  }
+	  }else if(HAL_GPIO_ReadPin(GPIOE, TTL1_Pin) == GPIO_PIN_RESET &&
+				 HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_SET
+				 ){
+		  // state 3 row 2 in the DAC's array
+		  if(last_r != 2){
+			  SendToDAC(2);
+		  }
+	  }
+  }
+}
+
+
+void SendToDAC(int r)  // original Mehrdad's function
+/*
+ * r - state number (0-3) (depends on TTLs state)
+ */
+{
+	uint32_t t0, t1, t;
+	if(DAC[r][3] < 1){
+		DAC[r][3] = 1;
+	}
+
+	int n = round(DAC[r][3]*58);	// 58 to apply values to DAC
+	double dif1, dif2, dif3;
+
+	// x? this part need for sending correct value in first loop
+
+	dif1 = fabs(DAC[r][0] - DAC[last_r][0])/n;
+	dif2 = fabs(DAC[r][1] - DAC[last_r][1])/n;
+	dif3 = fabs(DAC[r][2] - DAC[last_r][2])/n;
+
+	DAC[3][0] = DAC[last_r][0];
+	DAC[3][1] = DAC[last_r][1];
+	DAC[3][2] = DAC[last_r][2];
+
+	if(r == 3){
+		n = 1;
+	}
+
+	t0 = HAL_GetTick();
+	for(int i = 1; i <= n; i++){
+
+		if(DAC[r][0] > DAC[last_r][0]){
+			DAC[3][0] += dif1;
+		}else{
+			DAC[3][0] -= dif1;
+		}
+		if(DAC[r][1] > DAC[last_r][1]){
+			DAC[3][1] += dif2;
+		}else{
+			DAC[3][1] -= dif2;
+		}
+		if(DAC[r][2] > DAC[last_r][2]){
+			DAC[3][2] += dif3;
+		}else{
+			DAC[3][2] -= dif3;
+		}
+
+		for(int j = 0; j < 3; j++){
+
+			  state = 1;
+
+			  switch(j){
+				  case 0:
+					  if(DAC[3][j] >= 0){
+						  HAL_GPIO_WritePin(DIR1_GPIO_Port, DIR1_Pin, GPIO_PIN_SET);
+					  }else{
+						  HAL_GPIO_WritePin(DIR1_GPIO_Port, DIR1_Pin, GPIO_PIN_RESET);
+					  }
+					  break;
+				  case 1:
+					  if(DAC[3][j] >= 0){
+						  HAL_GPIO_WritePin(DIR2_GPIO_Port, DIR2_Pin, GPIO_PIN_SET);
+					  }else{
+						  HAL_GPIO_WritePin(DIR2_GPIO_Port, DIR2_Pin, GPIO_PIN_RESET);
+					  }
+					  break;
+				  case 2:
+					  if(DAC[3][j] >= 0){
+						  HAL_GPIO_WritePin(DIR3_GPIO_Port, DIR3_Pin, GPIO_PIN_SET);
+					  }else{
+						  HAL_GPIO_WritePin(DIR3_GPIO_Port, DIR3_Pin, GPIO_PIN_RESET);
+					  }
+					  break;
+			  }
+
+			  if(fabs(DAC[3][j]) > v_ref){
+				  d_in = 0xffff;
+			  }else{
+				  d_in = abs(round((DAC[3][j]/v_ref) * max_dec));
+			  }
+
+			  SetDAC(j, d_in);
+		}
+	}
+
+	t1 = HAL_GetTick();
+	t = t1 - t0;
+	last_r = r;
+}
+
+
 void SendSpiMesToDac(uint32_t message){
 	/*
 	 * send prepared message to DAC
