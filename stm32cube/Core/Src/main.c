@@ -19,6 +19,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -71,6 +74,7 @@ const osThreadAttr_t interfaceTask_attributes = {
 char spi_buf[30];
 int state;
 uint16_t d_in;
+int gs=0;
 
 /* create an array for DAC's values:
 
@@ -91,6 +95,31 @@ const double v_ref = 3.0;
 const int max_dec = 65536;
 int last_r = 3;
 char test='A';
+
+char help[] = "Correct format for communication with compensation coils driver:\r\n"
+			  "\r\n"
+			  "for getting help!\r\n"
+			  "help\r\n"
+			  "\r\n"
+			  "for closing connection!\r\n"
+			  "exit\r\n"
+			  "\r\n"
+			  "for sending values:\r\n"
+			  "DAC: state: val1; val2; val3; time\r\n"
+			  "or\r\n"
+			  "DAC: state; val1; val2; val3; time\r\n"
+			  "or\r\n"
+			  "DAC: state val1; val2; val3; time\r\n"
+			  "EXAMPLE:\r\n"
+			  "DAC: 000: 1.2565; -2.30; -0.065; 150\r\n"
+			  "\r\n"
+			  "for sending more state:\r\n"
+			  "DAC: state: val1; val2; val3; time; & state: val1; val2; val3; time; & state: val1; val2; val3; time\r\n"
+			  "\r\n"
+			  "all states:\r\n"
+			  "state1: 000; state2: 001; state3: 010\r\n"
+			  "values should be between: -3.0 v - +3.0 v\r\n"
+			  "time should be more than of 1 ms\r\n";
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -112,7 +141,7 @@ void StartInterfaceTask(void *argument);
 void SendSpiMesToDac(uint32_t);
 void SetDAC(uint8_t channel, uint16_t value);
 void SendToDAC(int r);
-int ExtractMessage(char* msg);
+int ExtractMessage(char* msg, char* out);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -843,6 +872,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
   if(GPIO_Pin==TTL0_Pin)
   {
+	  gs++;
 	  if(HAL_GPIO_ReadPin(GPIOD, TTL1_Pin) == GPIO_PIN_RESET &&
 		 HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_RESET
 	  ){
@@ -959,6 +989,209 @@ void SendToDAC(int r)  // original Mehrdad's function
 }
 
 
+int ExtractMessage(char* msg, char* uart_bufT){  // original Mehrdad's function
+
+	char temp[100] = {};
+	int j = 0, k = 0, f1 = 1, f2 = 1, f3 = 0;
+	double temp_dac[3][4];
+	int uart_buf_len;
+
+	for(int a = 0; a < 3; a++){
+		for(int b = 0; b < 4; b++){
+			temp_dac[a][b] = DAC[a][b];
+		}
+	}
+	for(int i = 0; i < strlen(msg); i++){
+		if(msg[i] == ':'){
+			if(strcmp(temp, "DAC") != 0){
+				return 0;
+			}else{
+
+				f1 = 1;
+				i++;	// for removing first space after DAC:
+				j = 0;
+				memset(temp, 0, sizeof temp);
+				while(f1){
+					i++;
+					if(msg[i] == ' ' || msg[i] == ':' || msg[i] == ';' || i >= strlen(msg)){
+						f2 = 1;
+						if(strcmp(temp, "000") == 0){
+							j = 0;
+							memset(temp, 0, sizeof temp);
+							while(f2){
+								i++;
+								if(msg[i] == ';'){
+									temp_dac[0][k] = atof(temp);
+									k++;
+									j = 0;
+									memset(temp, 0, sizeof temp);
+								}else if(i >= strlen(msg)){
+									if(k == 3){
+										temp_dac[0][k] = atof(temp);
+										k++;
+										j = 0;
+										memset(temp, 0, sizeof temp);
+									}else{
+										// uart_buf_len = sprintf(uart_bufT, "the format is wrong: %s\r\n\n%s\r\n", (char*)temp, (char*)help);
+										// HAL_UART_Transmit(&huart4, (uint8_t*)uart_bufT, uart_buf_len, 100);
+										return 0;
+									}
+								}else{
+									temp[j] = msg[i];
+									j++;
+									continue;
+								}
+								if(k > 3){
+									f2 = 0;
+									f3 = 1;
+									k = 0;
+									for(int m = 0; m < 4; m++){
+										DAC[0][m] = temp_dac[0][m];
+									}
+								}
+							}
+						}else if(strcmp(temp, "001") == 0){
+							j = 0;
+							memset(temp, 0, sizeof temp);
+							while(f2){
+								i++;
+								if(msg[i] == ';'){
+
+									temp_dac[1][k] = atof(temp);
+									k++;
+									j = 0;
+									memset(temp, 0, sizeof temp);
+								}else if(i >= strlen(msg)){
+
+									if(k == 3){
+
+										temp_dac[1][k] = atof(temp);
+										k++;
+										j = 0;
+										memset(temp, 0, sizeof temp);
+									}else{
+
+										// uart_buf_len = sprintf(uart_bufT, "the format is wrong: %s\r\n\n%s\r\n", (char*)temp, (char*)help);
+										// HAL_UART_Transmit(&huart4, (uint8_t*)uart_bufT, uart_buf_len, 100);
+										return 0;
+									}
+								}else{
+									temp[j] = msg[i];
+									j++;
+									continue;
+								}
+								if(k > 3){
+									f2 = 0;
+									f3 = 1;
+									k = 0;
+
+									for(int m = 0; m < 4; m++){
+										DAC[1][m] = temp_dac[1][m];
+									}
+								}
+							}
+						}else if(strcmp(temp, "010") == 0){
+
+							j = 0;
+							memset(temp, 0, sizeof temp);
+
+							while(f2){
+
+								i++;
+
+								if(msg[i] == ';'){
+
+									temp_dac[2][k] = atof(temp);
+									k++;
+									j = 0;
+									memset(temp, 0, sizeof temp);
+								}else if(i >= strlen(msg)){
+
+									if(k == 3){
+
+										temp_dac[2][k] = atof(temp);
+										k++;
+										j = 0;
+										memset(temp, 0, sizeof temp);
+									}else{
+
+										// uart_buf_len = sprintf(uart_bufT, "the format is wrong: %s\r\n\n%s\r\n", (char*)temp, (char*)help);
+										// HAL_UART_Transmit(&huart3, (uint8_t*)uart_bufT, uart_buf_len, 100);
+										return 0;
+									}
+								}else{
+
+									temp[j] = msg[i];
+									j++;
+									continue;
+								}
+								if(k > 3){
+
+									f2 = 0;
+									f3 = 1;
+									k = 0;
+
+									for(int m = 0; m < 4; m++){
+										DAC[2][m] = temp_dac[2][m];
+									}
+								}
+							}
+						}else{
+
+							// uart_buf_len = sprintf(uart_bufT, "the format is wrong: %s\r\n\n%s\r\n", (char*)temp, (char*)help);
+							// HAL_UART_Transmit(&huart3, (uint8_t*)uart_bufT, uart_buf_len, 100);
+							return 0;
+						}
+					}else{
+
+						temp[j] = msg[i];
+						j++;
+						continue;
+					}
+
+					while(f3){
+
+						i++;
+						if(msg[i] == '&'){
+
+							f3 = 0;
+							i++;	// for removing first space after $
+						}else if(i >= strlen(msg)){
+
+							f3 = 0;
+							f1 = 0;
+
+							return 2;
+						}
+					}
+				}
+			}
+		}else{
+
+			temp[j] = msg[i];
+
+			if(strcmp(temp, "exit") == 0 || strcmp(temp, "Exit") == 0 || strcmp(temp, "EXIT") == 0){
+
+				// uart_buf_len = sprintf(uart_bufT, "Exit!\r\n");
+				// HAL_UART_Transmit(&huart3, (uint8_t*)uart_bufT, uart_buf_len, 100);
+
+				return 3;
+			}else if(strcmp(temp, "help") == 0 || strcmp(temp, "Help") == 0 || strcmp(temp, "HELP") == 0){
+
+				uart_buf_len = sprintf(uart_bufT, "help %s\r\n", (char*)temp);
+				return 1;
+			}
+			j++;
+
+			continue;
+		}
+	}
+
+	uart_buf_len = sprintf(uart_bufT, "wrong msg: %s\r\n\n", (char*)temp);
+	return 0;
+}
+
+
 void SendSpiMesToDac(uint32_t message){
 	/*
 	 * send prepared message to DAC
@@ -1017,6 +1250,7 @@ void StartInterfaceTask(void *argument)
   /* USER CODE BEGIN StartInterfaceTask */
   uint8_t rxChar;
   uint8_t rxBuffer[BUFFER_SIZE];
+  uint8_t txBuffer[BUFFER_SIZE];
   uint16_t index = 0;
   HAL_StatusTypeDef status;
 
@@ -1029,7 +1263,8 @@ void StartInterfaceTask(void *argument)
 	  {
 		  if ((rxChar == '\r' || rxChar == '\n') && index>0){
 			  rxBuffer[index++]='\n';
-			  HAL_UART_Transmit(&huart4, rxBuffer, index, HAL_MAX_DELAY);
+			  ExtractMessage((char*) rxBuffer, (char*) txBuffer);
+			  HAL_UART_Transmit(&huart4, txBuffer, strlen(txBuffer), HAL_MAX_DELAY);
 			  index=0;
 		  }
 		  else{
