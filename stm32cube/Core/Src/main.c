@@ -142,6 +142,7 @@ void SendSpiMesToDac(uint32_t);
 void SetDAC(uint8_t channel, uint16_t value);
 void SendToDAC(int r);
 int ExtractMessage(char* msg, char* out);
+void arrayToString(double DAC[4][4], char *result);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -899,6 +900,22 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 
 
+void arrayToString(double DAC[4][4], char *result) {
+    char buffer[50];  // Tymczasowy bufor na pojedynczy element
+    result[0] = '\0'; // Inicjalizujemy pusty string
+
+    for (int i = 0; i < 4; i++) {
+        strcat(result, "{ ");
+        for (int j = 0; j < 4; j++) {
+            sprintf(buffer, "%.2f", DAC[i][j]);
+            strcat(result, buffer);
+            if (j < 3) strcat(result, ", ");
+        }
+        strcat(result, " }");
+        if (i < 3) strcat(result, ",\n");
+    }
+}
+
 void SendToDAC(int r)  // original Mehrdad's function
 /*
  * r - state number (0-3) (depends on TTLs state)
@@ -989,7 +1006,7 @@ void SendToDAC(int r)  // original Mehrdad's function
 }
 
 
-int ExtractMessage(char* msg, char* uart_bufT){  // original Mehrdad's function
+int ExtractMessage(char* msg, char* uart_bufT){  // original Mehrdad's function slightly simplified
 
 	char temp[100] = {};
 	int j = 0, k = 0, f1 = 1, f2 = 1, f3 = 0;
@@ -1167,18 +1184,16 @@ int ExtractMessage(char* msg, char* uart_bufT){  // original Mehrdad's function
 				}
 			}
 		}else{
-
 			temp[j] = msg[i];
-
-			if(strcmp(temp, "exit") == 0 || strcmp(temp, "Exit") == 0 || strcmp(temp, "EXIT") == 0){
-
-				// uart_buf_len = sprintf(uart_bufT, "Exit!\r\n");
-				// HAL_UART_Transmit(&huart3, (uint8_t*)uart_bufT, uart_buf_len, 100);
-
-				return 3;
-			}else if(strcmp(temp, "help") == 0 || strcmp(temp, "Help") == 0 || strcmp(temp, "HELP") == 0){
-
-				uart_buf_len = sprintf(uart_bufT, "help %s\r\n", (char*)temp);
+			if(strcasecmp(temp, "exit") == 0){
+				sprintf(uart_bufT, "Exit!\r\n");
+				return 3; //TODO: check how does exit works
+			}else if(strcasecmp(temp, "help") == 0){
+				sprintf(uart_bufT, "help %s\r\n", (char*)temp);
+				return 1;
+			}
+			else if(strcasecmp(temp, "tab")==0){
+				arrayToString(DAC, uart_bufT);
 				return 1;
 			}
 			j++;
