@@ -1013,173 +1013,173 @@ int ExtractMessage(char* msg, char* uart_bufT){  // original Mehrdad's function 
 	double temp_dac[3][4];
 	int uart_buf_len;
 
-	for(int a = 0; a < 3; a++){
+	 for(int a = 0; a < 3; a++){
 		for(int b = 0; b < 4; b++){
 			temp_dac[a][b] = DAC[a][b];
 		}
 	}
+//	memcpy(temp_dac, DAC, sizeof(temp_dac));
+
 	for(int i = 0; i < strlen(msg); i++){
 		if(msg[i] == ':'){
 			if(strcmp(temp, "DAC") != 0){
 				return 0;
-			}else{
-
-				f1 = 1;
-				i++;	// for removing first space after DAC:
-				j = 0;
-				memset(temp, 0, sizeof temp);
-				while(f1){
-					i++;
-					if(msg[i] == ' ' || msg[i] == ':' || msg[i] == ';' || i >= strlen(msg)){
-						f2 = 1;
-						if(strcmp(temp, "000") == 0){
-							j = 0;
-							memset(temp, 0, sizeof temp);
-							while(f2){
-								i++;
-								if(msg[i] == ';'){
+			}
+			f1 = 1;
+			i++;	// for removing first space after DAC:
+			j = 0;
+			memset(temp, 0, sizeof temp);
+			while(f1){
+				i++;
+				if(msg[i] == ' ' || msg[i] == ':' || msg[i] == ';' || i >= strlen(msg)){
+					f2 = 1;
+					if(strcmp(temp, "000") == 0){
+						j = 0;
+						memset(temp, 0, sizeof temp);
+						while(f2){
+							i++;
+							if(msg[i] == ';'){
+								temp_dac[0][k] = atof(temp);
+								k++;
+								j = 0;
+								memset(temp, 0, sizeof temp);
+							}else if(i >= strlen(msg)){
+								if(k == 3){
 									temp_dac[0][k] = atof(temp);
 									k++;
 									j = 0;
 									memset(temp, 0, sizeof temp);
-								}else if(i >= strlen(msg)){
-									if(k == 3){
-										temp_dac[0][k] = atof(temp);
-										k++;
-										j = 0;
-										memset(temp, 0, sizeof temp);
-									}else{
-										// uart_buf_len = sprintf(uart_bufT, "the format is wrong: %s\r\n\n%s\r\n", (char*)temp, (char*)help);
-										// HAL_UART_Transmit(&huart4, (uint8_t*)uart_bufT, uart_buf_len, 100);
-										return 0;
-									}
 								}else{
-									temp[j] = msg[i];
-									j++;
-									continue;
+									// uart_buf_len = sprintf(uart_bufT, "the format is wrong: %s\r\n\n%s\r\n", (char*)temp, (char*)help);
+									// HAL_UART_Transmit(&huart4, (uint8_t*)uart_bufT, uart_buf_len, 100);
+									return 0;
 								}
-								if(k > 3){
-									f2 = 0;
-									f3 = 1;
-									k = 0;
-									for(int m = 0; m < 4; m++){
-										DAC[0][m] = temp_dac[0][m];
-									}
+							}else{
+								temp[j] = msg[i];
+								j++;
+								continue;
+							}
+							if(k > 3){
+								f2 = 0;
+								f3 = 1;
+								k = 0;
+								for(int m = 0; m < 4; m++){
+									DAC[0][m] = temp_dac[0][m];
 								}
 							}
-						}else if(strcmp(temp, "001") == 0){
-							j = 0;
-							memset(temp, 0, sizeof temp);
-							while(f2){
-								i++;
-								if(msg[i] == ';'){
+						}
+					}else if(strcmp(temp, "001") == 0){
+						j = 0;
+						memset(temp, 0, sizeof temp);
+						while(f2){
+							i++;
+							if(msg[i] == ';'){
+
+								temp_dac[1][k] = atof(temp);
+								k++;
+								j = 0;
+								memset(temp, 0, sizeof temp);
+							}else if(i >= strlen(msg)){
+
+								if(k == 3){
 
 									temp_dac[1][k] = atof(temp);
 									k++;
 									j = 0;
 									memset(temp, 0, sizeof temp);
-								}else if(i >= strlen(msg)){
-
-									if(k == 3){
-
-										temp_dac[1][k] = atof(temp);
-										k++;
-										j = 0;
-										memset(temp, 0, sizeof temp);
-									}else{
-
-										// uart_buf_len = sprintf(uart_bufT, "the format is wrong: %s\r\n\n%s\r\n", (char*)temp, (char*)help);
-										// HAL_UART_Transmit(&huart4, (uint8_t*)uart_bufT, uart_buf_len, 100);
-										return 0;
-									}
 								}else{
-									temp[j] = msg[i];
-									j++;
-									continue;
-								}
-								if(k > 3){
-									f2 = 0;
-									f3 = 1;
-									k = 0;
 
-									for(int m = 0; m < 4; m++){
-										DAC[1][m] = temp_dac[1][m];
-									}
+									// uart_buf_len = sprintf(uart_bufT, "the format is wrong: %s\r\n\n%s\r\n", (char*)temp, (char*)help);
+									// HAL_UART_Transmit(&huart4, (uint8_t*)uart_bufT, uart_buf_len, 100);
+									return 0;
+								}
+							}else{
+								temp[j] = msg[i];
+								j++;
+								continue;
+							}
+							if(k > 3){
+								f2 = 0;
+								f3 = 1;
+								k = 0;
+
+								for(int m = 0; m < 4; m++){
+									DAC[1][m] = temp_dac[1][m];
 								}
 							}
-						}else if(strcmp(temp, "010") == 0){
+						}
+					}else if(strcmp(temp, "010") == 0){
 
-							j = 0;
-							memset(temp, 0, sizeof temp);
+						j = 0;
+						memset(temp, 0, sizeof temp);
 
-							while(f2){
+						while(f2){
 
-								i++;
+							i++;
 
-								if(msg[i] == ';'){
+							if(msg[i] == ';'){
+
+								temp_dac[2][k] = atof(temp);
+								k++;
+								j = 0;
+								memset(temp, 0, sizeof temp);
+							}else if(i >= strlen(msg)){
+
+								if(k == 3){
 
 									temp_dac[2][k] = atof(temp);
 									k++;
 									j = 0;
 									memset(temp, 0, sizeof temp);
-								}else if(i >= strlen(msg)){
-
-									if(k == 3){
-
-										temp_dac[2][k] = atof(temp);
-										k++;
-										j = 0;
-										memset(temp, 0, sizeof temp);
-									}else{
-
-										// uart_buf_len = sprintf(uart_bufT, "the format is wrong: %s\r\n\n%s\r\n", (char*)temp, (char*)help);
-										// HAL_UART_Transmit(&huart3, (uint8_t*)uart_bufT, uart_buf_len, 100);
-										return 0;
-									}
 								}else{
 
-									temp[j] = msg[i];
-									j++;
-									continue;
+									// uart_buf_len = sprintf(uart_bufT, "the format is wrong: %s\r\n\n%s\r\n", (char*)temp, (char*)help);
+									// HAL_UART_Transmit(&huart3, (uint8_t*)uart_bufT, uart_buf_len, 100);
+									return 0;
 								}
-								if(k > 3){
+							}else{
 
-									f2 = 0;
-									f3 = 1;
-									k = 0;
+								temp[j] = msg[i];
+								j++;
+								continue;
+							}
+							if(k > 3){
 
-									for(int m = 0; m < 4; m++){
-										DAC[2][m] = temp_dac[2][m];
-									}
+								f2 = 0;
+								f3 = 1;
+								k = 0;
+
+								for(int m = 0; m < 4; m++){
+									DAC[2][m] = temp_dac[2][m];
 								}
 							}
-						}else{
-
-							// uart_buf_len = sprintf(uart_bufT, "the format is wrong: %s\r\n\n%s\r\n", (char*)temp, (char*)help);
-							// HAL_UART_Transmit(&huart3, (uint8_t*)uart_bufT, uart_buf_len, 100);
-							return 0;
 						}
 					}else{
 
-						temp[j] = msg[i];
-						j++;
-						continue;
+						// uart_buf_len = sprintf(uart_bufT, "the format is wrong: %s\r\n\n%s\r\n", (char*)temp, (char*)help);
+						// HAL_UART_Transmit(&huart3, (uint8_t*)uart_bufT, uart_buf_len, 100);
+						return 0;
 					}
+				}else{
 
-					while(f3){
+					temp[j] = msg[i];
+					j++;
+					continue;
+				}
 
-						i++;
-						if(msg[i] == '&'){
+				while(f3){
 
-							f3 = 0;
-							i++;	// for removing first space after $
-						}else if(i >= strlen(msg)){
+					i++;
+					if(msg[i] == '&'){
 
-							f3 = 0;
-							f1 = 0;
+						f3 = 0;
+						i++;	// for removing first space after $
+					}else if(i >= strlen(msg)){
 
-							return 2;
-						}
+						f3 = 0;
+						f1 = 0;
+
+						return 2;
 					}
 				}
 			}
