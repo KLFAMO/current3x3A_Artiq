@@ -74,27 +74,27 @@ const osThreadAttr_t interfaceTask_attributes = {
 char spi_buf[30];
 int state;
 uint16_t d_in;
-int gs=0;
+int sta=0;
 
 /* create an array for DAC's values:
 
 		row 0 for DAC1: X1, Y1, Z1, T1
 		row 1 for DAC2: X2, Y2, Z2, T2
 		row 2 for DAC3: X3, Y3, Z3, T3
+		row 3 for transitions between states
 
 		X,Y,Z are voltage value in volt and T is time in ms
 
 */
 double DAC[4][4] = {
-		{0.0, 0.0, 0.0, 0.0},
-		{0.1, 0.1, 0.1, 1.0},
-		{-0.1, -0.1, -0.1, 1.0},
-		{0.0, 0.0, 0.0, 1.0}
+		{0.0, 0.0, 0.0, 1},
+		{0.1, 0.1, 0.1, 1},
+		{0.0, 0.0, 0.0, 1},
+		{0.0, 0.0, 0.0, 1} // <- this row is used for transitions between states
 };
 const double v_ref = 3.0;
 const int max_dec = 65536;
 int last_r = 3;
-char test='A';
 
 char help[] = "Correct format for communication with compensation coils driver:\r\n"
 			  "\r\n"
@@ -873,36 +873,39 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
   if(GPIO_Pin==TTL0_Pin)
   {
-	  gs++;
-	  if(HAL_GPIO_ReadPin(GPIOD, TTL1_Pin) == GPIO_PIN_RESET &&
+	  sta=3;
+	  if(HAL_GPIO_ReadPin(TTL1_GPIO_Port, TTL1_Pin) == GPIO_PIN_RESET &&
 		 HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_RESET
 	  ){
 		  // state 1 row 0 in the DAC's array
-		  if(last_r != 0){
+		  //if(last_r != 0){
 			  SendToDAC(0);
-		  }
-	  }else if(HAL_GPIO_ReadPin(GPIOE, TTL1_Pin) == GPIO_PIN_SET &&
+			  sta=0;
+		  //}
+	  }else if(HAL_GPIO_ReadPin(TTL1_GPIO_Port, TTL1_Pin) == GPIO_PIN_SET &&
 			  HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_RESET
 	  ){
 		  // state 2 row 1 in the DAC's array
 		  if(last_r != 1){
 			  SendToDAC(1);
 		  }
-	  }else if(HAL_GPIO_ReadPin(GPIOE, TTL1_Pin) == GPIO_PIN_RESET &&
+		  sta=1;
+	  }else if(HAL_GPIO_ReadPin(TTL1_GPIO_Port, TTL1_Pin) == GPIO_PIN_RESET &&
 				 HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_SET
 				 ){
 		  // state 3 row 2 in the DAC's array
 		  if(last_r != 2){
 			  SendToDAC(2);
 		  }
+		  sta=2;
 	  }
   }
 }
 
 
 void arrayToString(double DAC[4][4], char *result) {
-    char buffer[50];  // Tymczasowy bufor na pojedynczy element
-    result[0] = '\0'; // Inicjalizujemy pusty string
+    char buffer[50];
+    result[0] = '\0';
 
     for (int i = 0; i < 4; i++) {
         strcat(result, "{ ");
@@ -918,32 +921,36 @@ void arrayToString(double DAC[4][4], char *result) {
 
 void SendToDAC(int r)  // original Mehrdad's function
 /*
- * r - state number (0-3) (depends on TTLs state)
+ * r - state number (0-2) (depends on TTLs state) - row number of array DAC
  */
 {
-	uint32_t t0, t1, t;
+//	uint32_t t0, t1, t;
+	/* transition time must be min 1ms */
 	if(DAC[r][3] < 1){
 		DAC[r][3] = 1;
 	}
 
 	int n = round(DAC[r][3]*58);	// 58 to apply values to DAC
+	/* n is a number of steps in entire transition (assuming 58 steps per 1 ms) */
+
 	double dif1, dif2, dif3;
 
-	// x? this part need for sending correct value in first loop
-
+	/* difx is single step voltage change for channel x */
 	dif1 = fabs(DAC[r][0] - DAC[last_r][0])/n;
 	dif2 = fabs(DAC[r][1] - DAC[last_r][1])/n;
 	dif3 = fabs(DAC[r][2] - DAC[last_r][2])/n;
 
+	// x? this part need for sending correct value in first loop
 	DAC[3][0] = DAC[last_r][0];
 	DAC[3][1] = DAC[last_r][1];
 	DAC[3][2] = DAC[last_r][2];
 
+	/* this case will never heppen?
 	if(r == 3){
 		n = 1;
-	}
+	} */
 
-	t0 = HAL_GetTick();
+//	t0 = HAL_GetTick();
 	for(int i = 1; i <= n; i++){
 
 		if(DAC[r][0] > DAC[last_r][0]){
@@ -963,9 +970,7 @@ void SendToDAC(int r)  // original Mehrdad's function
 		}
 
 		for(int j = 0; j < 3; j++){
-
 			  state = 1;
-
 			  switch(j){
 				  case 0:
 					  if(DAC[3][j] >= 0){
@@ -1000,8 +1005,8 @@ void SendToDAC(int r)  // original Mehrdad's function
 		}
 	}
 
-	t1 = HAL_GetTick();
-	t = t1 - t0;
+//	t1 = HAL_GetTick();
+//	t = t1 - t0;
 	last_r = r;
 }
 
@@ -1194,6 +1199,10 @@ int ExtractMessage(char* msg, char* uart_bufT){  // original Mehrdad's function 
 			}
 			else if(strcasecmp(temp, "tab")==0){
 				arrayToString(DAC, uart_bufT);
+				return 1;
+			}
+			else if(strcasecmp(temp, "state")==0){
+				sprintf(uart_bufT, "state: %d\r\n", sta);
 				return 1;
 			}
 			j++;
