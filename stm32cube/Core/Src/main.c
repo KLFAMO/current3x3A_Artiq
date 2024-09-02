@@ -88,7 +88,7 @@ int sta=0;
 */
 double DAC[4][4] = {
 		{0.0, 0.0, 0.0, 1},
-		{0.1, 0.1, 0.1, 1},
+		{-2.0, -2.0, -2.0, 1},
 		{0.0, 0.0, 0.0, 1},
 		{0.0, 0.0, 0.0, 1} // <- this row is used for transitions between states
 };

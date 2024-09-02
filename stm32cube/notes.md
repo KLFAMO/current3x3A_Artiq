@@ -13,31 +13,31 @@ Checking time factor
 10ms in program ->  300ms
 
 Test - transistors
-val set in DAC table -> current measured by multimeter
+val set in DAC table -> current measured by multimeter  (another board)
 
 L1:
 start: -0.1A
 0.0V -> 0.1A
-0.1V -> -0.11A
-1.0V -> -0.18A
+0.1V -> -0.11A (-0.42A)
+1.0V -> -0.18A (-0.94A)
 2.0V -> -0.38A
 -1.0V -> 0.2A
--2.0V -> 0.4A
+-2.0V -> 0.4A (1.89A)
 
 L2:
 start: -0.38A
 0.0V -> 0.38A
-0.1V -> -0.41A
-1.0V -> -0.93A
+0.1V -> -0.41A (-0.4A)
+1.0V -> -0.93A (-0.92A)
 2.0V -> -1.85
 -1.0V -> 0.93A
--2.0V -> 1.86A
+-2.0V -> 1.86A (1.85A)
 
 L3:
 start: -0.36A
 0.0V -> -0.36A
-0.1V -> -0.39A
-1.0V -> -0.9A
+0.1V -> -0.39A (-0.39A)
+1.0V -> -0.9A (-0.89A)
 2.0V -> -1.8A
--1.0V -> 0.9A
+-1.0V -> 0.9A (1.79A)
 -2.0V -> 1.8A
