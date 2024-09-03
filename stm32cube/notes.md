@@ -39,5 +39,10 @@ start: -0.36A
 0.1V -> -0.39A (-0.39A)
 1.0V -> -0.9A (-0.89A)
 2.0V -> -1.8A
--1.0V -> 0.9A (1.79A)
--2.0V -> 1.8A
+-1.0V -> 0.9A 
+-2.0V -> 1.8A (1.79A)
+
+2024-09-03
+cur1, cur2 and cur3 = 5mV if no current applied (just after starting uC and without load and high power supply)
+
+L1: DAC_set=0V -> DACIN1_mes=0.48V
