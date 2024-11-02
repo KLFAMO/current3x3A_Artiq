@@ -87,7 +87,7 @@ int sta=0;
 
 */
 double DAC[4][4] = {
-		{0.0, 0.0, 0.0, 1},
+		{0.0, 0.0, 0.0, 10},
 		{-2.0, -2.0, -2.0, 1},
 		{0.0, 0.0, 0.0, 1},
 		{0.0, 0.0, 0.0, 1} // <- this row is used for transitions between states
@@ -930,7 +930,7 @@ void SendToDAC(int r)  // original Mehrdad's function
 		DAC[r][3] = 1;
 	}
 
-	int n = round(DAC[r][3]*58);	// 58 to apply values to DAC
+	int n = round(DAC[r][3]*2);	// 58 to apply values to DAC
 	/* n is a number of steps in entire transition (assuming 58 steps per 1 ms) */
 
 	double dif1, dif2, dif3;
