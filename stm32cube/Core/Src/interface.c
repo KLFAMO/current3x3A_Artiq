@@ -27,12 +27,14 @@ pointer getPointer(pointer p, char *s)
     parameters *ptmp = (parameters *)p.p;
     if (strcmp(s, "MODE") == 0)
 	    pout = (pointer){.p = (void *)&(ptmp->mode), .type = "value"};
+    if (strcmp(s, "S0") == 0)
+	    pout = (pointer){.p = (void *)&(ptmp->s0), .type = "ttlstate"};
     if (strcmp(s, "S1") == 0)
 	    pout = (pointer){.p = (void *)&(ptmp->s1), .type = "ttlstate"};
     if (strcmp(s, "S2") == 0)
 	    pout = (pointer){.p = (void *)&(ptmp->s2), .type = "ttlstate"};
-    if (strcmp(s, "S3") == 0)
-	    pout = (pointer){.p = (void *)&(ptmp->s3), .type = "ttlstate"};
+    if (strcmp(s, "STATE") == 0)
+	    pout = (pointer){.p = (void *)&(ptmp->state), .type = "value"};
   }
 
   if (strcmp(p.type, "ttlstate") == 0)
@@ -105,18 +107,19 @@ void setParam(value *p, double val)
 void initInterface(void)
 {
   par.mode = (value){.val = 0, .min = 0, .max = 0};
+  par.state = (value){.val = 3, .min = 0, .max = 3};
+  par.s0.v1 = (value){.val = 0, .min = -3, .max = 3};
+  par.s0.v2 = (value){.val = 0, .min = -3, .max = 3};
+  par.s0.v3 = (value){.val = 0, .min = -3, .max = 3};
+  par.s0.t = (value){.val = 1, .min = 1, .max = 50};
   par.s1.v1 = (value){.val = 0, .min = -3, .max = 3};
   par.s1.v2 = (value){.val = 0, .min = -3, .max = 3};
   par.s1.v3 = (value){.val = 0, .min = -3, .max = 3};
-  par.s1.t = (value){.val = 0, .min = 1, .max = 50};
+  par.s1.t = (value){.val = 1, .min = 1, .max = 50};
   par.s2.v1 = (value){.val = 0, .min = -3, .max = 3};
   par.s2.v2 = (value){.val = 0, .min = -3, .max = 3};
   par.s2.v3 = (value){.val = 0, .min = -3, .max = 3};
-  par.s2.t = (value){.val = 0, .min = 1, .max = 50};
-  par.s3.v1 = (value){.val = 0, .min = -3, .max = 3};
-  par.s3.v2 = (value){.val = 0, .min = -3, .max = 3};
-  par.s3.v3 = (value){.val = 0, .min = -3, .max = 3};
-  par.s3.t = (value){.val = 0, .min = 1, .max = 50};
+  par.s2.t = (value){.val = 1, .min = 1, .max = 50};
 }
 
 /*------------------------*/

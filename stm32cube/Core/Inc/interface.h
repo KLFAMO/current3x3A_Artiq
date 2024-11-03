@@ -44,9 +44,10 @@ typedef struct{
 
 typedef struct {
     value mode;
+    ttlstate s0;
     ttlstate s1;
     ttlstate s2;
-    ttlstate s3;
+    value state;
 } parameters;
 
 pointer getPointer(pointer,char * );
