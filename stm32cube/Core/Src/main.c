@@ -141,7 +141,8 @@ void StartInterfaceTask(void *argument);
 void SendSpiMesToDac(uint32_t);
 void SetDAC(uint8_t channel, uint16_t value);
 void SendToDAC(int r);
-int ExtractMessage(char* msg, char* out);
+int ExtractMessageOld(char* msg, char* out);
+void ExtractMessage(char* rxBuffer, char* txBuffer);
 void arrayToString(double DAC[4][4], char *result);
 /* USER CODE END PFP */
 
@@ -191,6 +192,8 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
+
+  initInterface();
   // DAC - Reset select.
 	// If RSTSEL is low, input coding is binary;
 	// if high = 2's complement
@@ -1010,8 +1013,13 @@ void SendToDAC(int r)  // original Mehrdad's function
 	last_r = r;
 }
 
+void ExtractMessage(char* rxBuffer, char* txBuffer)
+{
+    cmd_string_interpret(rxBuffer, txBuffer);
+    txBuffer[BUFFER_SIZE - 1] = '\0';
+}
 
-int ExtractMessage(char* msg, char* uart_bufT){  // original Mehrdad's function slightly simplified
+int ExtractMessageOld(char* msg, char* uart_bufT){  // original Mehrdad's function slightly simplified
 
 	char temp[100] = {};
 	int j = 0, k = 0, f1 = 1, f2 = 1, f3 = 0;
@@ -1287,7 +1295,9 @@ void StartInterfaceTask(void *argument)
 	  {
 		  if ((rxChar == '\r' || rxChar == '\n') && index>0){
 			  rxBuffer[index++]='\n';
+			  rxBuffer[index++]='\0';
 			  ExtractMessage((char*) rxBuffer, (char*) txBuffer);
+
 			  HAL_UART_Transmit(&huart4, txBuffer, strlen(txBuffer), HAL_MAX_DELAY);
 			  index=0;
 		  }

@@ -129,7 +129,7 @@ void initInterface(void)
 int cmd_string_interpret(char *sin, char *sout)
 {
   char scmd[100];
-  char ssend[2300];
+  char ssend[100];
   int i = 0, iscmd = 0, sinlen = 0;
   strcpy(ssend, "");
   sinlen = strlen(sin);
