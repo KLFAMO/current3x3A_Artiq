@@ -1070,8 +1070,12 @@ void StartInterfaceTask(void *argument)
   uint8_t rxChar;
   uint8_t rxBuffer[BUFFER_SIZE];
   uint8_t txBuffer[BUFFER_SIZE];
+//  uint8_t tmpBuffer[BUFFER_SIZE];
   uint16_t index = 0;
+  uint8_t helloMsg[] = "\n3x3A>";
   HAL_StatusTypeDef status;
+
+  HAL_UART_Transmit(&huart4, helloMsg, strlen(helloMsg), HAL_MAX_DELAY);
 
   /* Infinite loop */
   for(;;)
@@ -1084,8 +1088,12 @@ void StartInterfaceTask(void *argument)
 			  rxBuffer[index++]='\n';
 			  rxBuffer[index++]='\0';
 			  ExtractMessage((char*) rxBuffer, (char*) txBuffer);
+//			  strcpy(tmpBuffer, helloMsg);
+//			  strcat(tmpBuffer, txBuffer);
+//			  strcpy(txBuffer, tmpBuffer);
 
 			  HAL_UART_Transmit(&huart4, txBuffer, strlen(txBuffer), HAL_MAX_DELAY);
+			  HAL_UART_Transmit(&huart4, helloMsg, strlen(helloMsg), HAL_MAX_DELAY);
 			  index=0;
 		  }
 		  else{
