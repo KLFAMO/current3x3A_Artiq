@@ -24,14 +24,21 @@ The user interface is available via TCP/IP. TCP2323 module is used for Ethernet 
 
 ## Commands
 
-`DAC: state: val1; val2; val3; time`, where state is TTL state (000, 001, 010, 011, ...)
+There are 3 ttl states available, s0 (ttl=000), s1 (ttl=001), s2 (ttl=010).
 
-Values val1, val2, val3 should be between: -3.0 V - +3.0 V. 1V corresponds to 1A. 
+For each state, there are parameters: v1 (current in 1st coil), v2 (current in 2nd coil), v3 (current in 3th coil), t (time in ms of ramp before reaching these values). Current can be set between -3A to 3A. Minimum time t is 1ms.
 
-Time is linear transition time (in ms) to this stete (min 1ms).
+Example:
 
-Example: `DAC: 000: 1.2565; -2.30; -0.065; 150`
+`S1:V2 1.3` - set current 1.3A in 2nd coil for ttl state 001
 
+`S0:V3 -0.23` - set current -0.23A in 3th coil for ttl state 000
+
+`S2:T 5` - set time of ramp to 5 ms
+
+`S1:V1 ?` - display value of 1st coil for state 001
+
+`STATE ?` - display current ttl state 
 
 # Issues
 
