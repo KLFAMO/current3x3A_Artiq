@@ -20,7 +20,20 @@ Water cooling.
 
 # User Interface
 
-The user interface is available via TCP/IP. TCP2323 module is used for Ethernet TCP/IP communication. IP address is configurable on http server. After connecting to the device, the user can change settings by sending commands.
+The user interface is available via TCP/IP. TCP232 module is used for Ethernet TCP/IP communication. IP address is configurable on http server. After connecting to the device, the user can change settings by sending commands.
+
+## Setting Ethernet
+- type IP address in web browser (default-from factory TCP232 module IP is 192.168.0.7)
+- switch to `Serial Port` tab and set `Work Mode` to `TCP Server` and `Local Port Number` which will be used to connect to device
+- IP configuration may be changed in `Local IP Config` tab.
+
+## Connecting to the device
+
+Example in nc. In Windows you may need to switch to bash.
+```
+nc 192.168.3.96 10
+```
+
 
 ## Commands
 
