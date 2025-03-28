@@ -8,7 +8,7 @@
 
 # Ports
 
-Main power supply (- and +) 10A.
+Main power supply (- and +) 10A, 15V.
 
 3x compensating coils.
 
@@ -17,6 +17,18 @@ Power supply for low power control circuits (optional). This power supplay can b
 Ethernet - user interface.
 
 Water cooling.
+
+# Input configuration
+
+`TTL0` - triger, rising edge triggers current state
+
+`TTL1`, `TTL2` - determines current state TTL1 is the least significant bit.   
+(`TTL1`=0, `TTL2`=0) -> `state 0`  
+(`TTL1`=1, `TTL2`=0) -> `state 1`  
+(`TTL1`=0, `TTL2`=1) -> `state 2`
+
+States 3, 4, 5 ... are not implemented yet.  
+Just in case, please terminate `TTL1` or `TTL2` if not used/connected.
 
 # User Interface
 
@@ -56,3 +68,6 @@ Example:
 # Issues
 
 Please add your comments in the `Issues` Github section (at the top of this page).
+
+### Known issues
+- the current direction is opposite to set current

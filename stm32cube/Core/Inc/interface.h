@@ -43,11 +43,15 @@ typedef struct{
 } ttlstate;
 
 typedef struct {
+    double version;
+    value ver;
     value mode;
     ttlstate s0;
     ttlstate s1;
     ttlstate s2;
     value state;
+    value save;
+    value load;
 } parameters;
 
 pointer getPointer(pointer,char * );
