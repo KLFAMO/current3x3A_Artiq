@@ -8,7 +8,7 @@
 
 # Ports
 
-Main power supply (- and +) 10A.
+Main power supply (- and +) 10A, 15V.
 
 3x compensating coils.
 
@@ -18,9 +18,34 @@ Ethernet - user interface.
 
 Water cooling.
 
+# Input configuration
+
+`TTL0` - triger, rising edge triggers current state
+
+`TTL1`, `TTL2` - determines current state TTL1 is the least significant bit.   
+(`TTL1`=0, `TTL2`=0) -> `state 0`  
+(`TTL1`=1, `TTL2`=0) -> `state 1`  
+(`TTL1`=0, `TTL2`=1) -> `state 2`
+
+States 3, 4, 5 ... are not implemented yet.  
+Just in case, please terminate `TTL1` or `TTL2` if not used/connected.
+
 # User Interface
 
-The user interface is available via TCP/IP. TCP2323 module is used for Ethernet TCP/IP communication. IP address is configurable on http server. After connecting to the device, the user can change settings by sending commands.
+The user interface is available via TCP/IP. TCP232 module is used for Ethernet TCP/IP communication. IP address is configurable on http server. After connecting to the device, the user can change settings by sending commands.
+
+## Setting Ethernet
+- type IP address in web browser (default-from factory TCP232 module IP is 192.168.0.7)
+- switch to `Serial Port` tab and set `Work Mode` to `TCP Server` and `Local Port Number` which will be used to connect to device
+- IP configuration may be changed in `Local IP Config` tab.
+
+## Connecting to the device
+
+Example in nc. In Windows you may need to switch to bash.
+```
+nc 192.168.3.96 10
+```
+
 
 ## Commands
 
@@ -43,3 +68,6 @@ Example:
 # Issues
 
 Please add your comments in the `Issues` Github section (at the top of this page).
+
+### Known issues
+- the current direction is opposite to set current
