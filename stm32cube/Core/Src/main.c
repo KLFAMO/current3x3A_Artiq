@@ -1129,7 +1129,7 @@ void StartInterfaceTask(void *argument)
   uint8_t txBuffer[BUFFER_SIZE];
 //  uint8_t tmpBuffer[BUFFER_SIZE];
   uint16_t index = 0;
-  uint8_t helloMsg[] = "\n3x3A>";
+  uint8_t helloMsg[] = "\n";
   HAL_StatusTypeDef status;
 
   HAL_UART_Transmit(&huart4, helloMsg, strlen(helloMsg), HAL_MAX_DELAY);
