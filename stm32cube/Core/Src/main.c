@@ -920,6 +920,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			  SendToDAC(0);
 			  par.state.val=0;
 		  //}
+
 	  }else if(HAL_GPIO_ReadPin(TTL1_GPIO_Port, TTL1_Pin) == GPIO_PIN_SET &&
 			  HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_RESET
 	  ){
@@ -928,6 +929,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			  SendToDAC(1);
 		  }
 		  par.state.val=1;
+
 	  }else if(HAL_GPIO_ReadPin(TTL1_GPIO_Port, TTL1_Pin) == GPIO_PIN_RESET &&
 				 HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_SET
 				 ){
@@ -936,8 +938,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			  SendToDAC(2);
 		  }
 		  par.state.val=2;
-	  }
-    }else if(HAL_GPIO_ReadPin(TTL1_GPIO_Port, TTL1_Pin) == GPIO_PIN_SET &&
+
+      }else if(HAL_GPIO_ReadPin(TTL1_GPIO_Port, TTL1_Pin) == GPIO_PIN_SET &&
 				 HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_SET
 				 ){
 		  // state 4 row 2 in the DAC's array
@@ -946,7 +948,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		  }
 		  par.state.val=3;
 	  }
-  }
+  	}
 }
 
 
