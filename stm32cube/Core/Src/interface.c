@@ -35,6 +35,8 @@ pointer getPointer(pointer p, char *s)
 	    pout = (pointer){.p = (void *)&(ptmp->s1), .type = "ttlstate"};
     if (strcasecmp(s, "S2") == 0)
 	    pout = (pointer){.p = (void *)&(ptmp->s2), .type = "ttlstate"};
+    if (strcasecmp(s, "S3") == 0)
+	    pout = (pointer){.p = (void *)&(ptmp->s3), .type = "ttlstate"};
     if (strcasecmp(s, "STATE") == 0)
 	    pout = (pointer){.p = (void *)&(ptmp->state), .type = "value"};
     if (strcasecmp(s, "SAVE") == 0)
@@ -112,10 +114,10 @@ void setParam(value *p, double val)
 
 void initInterface(void)
 {
-  par.version = 1; // version of parameters structure, increment if structure changes
+  par.version = 2; // version of parameters structure, increment if structure changes
   par.ver = (value){.val = 1, .min = 0, .max = 100};
   par.mode = (value){.val = 0, .min = 0, .max = 0};
-  par.state = (value){.val = 3, .min = 0, .max = 3};
+  par.state = (value){.val = 0, .min = 0, .max = 3};
   par.s0.v1 = (value){.val = 0, .min = -3, .max = 3};
   par.s0.v2 = (value){.val = 0, .min = -3, .max = 3};
   par.s0.v3 = (value){.val = 0, .min = -3, .max = 3};
@@ -128,6 +130,10 @@ void initInterface(void)
   par.s2.v2 = (value){.val = 0, .min = -3, .max = 3};
   par.s2.v3 = (value){.val = 0, .min = -3, .max = 3};
   par.s2.t = (value){.val = 1, .min = 1, .max = 50};
+  par.s3.v1 = (value){.val = 0, .min = -3, .max = 3};
+  par.s3.v2 = (value){.val = 0, .min = -3, .max = 3};
+  par.s3.v3 = (value){.val = 0, .min = -3, .max = 3};
+  par.s3.t = (value){.val = 1, .min = 1, .max = 50};
   par.save = (value){.val = 0, .min = 0, .max = 1};
   par.load = (value){.val = 0, .min = 0, .max = 1};
 }

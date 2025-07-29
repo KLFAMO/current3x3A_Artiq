@@ -82,20 +82,22 @@ uint16_t d_in;
 		row 0 for DAC1: X1, Y1, Z1, T1
 		row 1 for DAC2: X2, Y2, Z2, T2
 		row 2 for DAC3: X3, Y3, Z3, T3
-		row 3 for transitions between states
+    row 3 for DAC4: X4, Y4, Z4, T4
+		row 4 for transitions between states
 
 		X,Y,Z are voltage value in volt and T is time in ms
 
 */
-double DAC[4][4] = {
+double DAC[5][4] = {
 		{0.0, 0.0, 0.0, 1},
 		{0.0, 0.0, 0.0, 1},
 		{0.0, 0.0, 0.0, 1},
+    {0.0, 0.0, 0.0, 1},
 		{0.0, 0.0, 0.0, 1} // <- this row is used for transitions between states
 };
 const double v_ref = 3.0;
 const int max_dec = 65536;
-int last_r = 3;
+int last_r = 4;
 
 
 
@@ -935,15 +937,24 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		  }
 		  par.state.val=2;
 	  }
+    }else if(HAL_GPIO_ReadPin(TTL1_GPIO_Port, TTL1_Pin) == GPIO_PIN_SET &&
+				 HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_SET
+				 ){
+		  // state 4 row 2 in the DAC's array
+		  if(last_r != 3){
+			  SendToDAC(3);
+		  }
+		  par.state.val=3;
+	  }
   }
 }
 
 
-void arrayToString(double DAC[4][4], char *result) {
+void arrayToString(double DAC[5][4], char *result) {
     char buffer[50];
     result[0] = '\0';
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 5; i++) {
         strcat(result, "{ ");
         for (int j = 0; j < 4; j++) {
             sprintf(buffer, "%.2f", DAC[i][j]);
@@ -957,7 +968,7 @@ void arrayToString(double DAC[4][4], char *result) {
 
 void SendToDAC(int r)  // original Mehrdad's function
 /*
- * r - state number (0-2) (depends on TTLs state) - row number of array DAC
+ * r - state number (0-3) (depends on TTLs state) - row number of array DAC
  */
 {
 //	uint32_t t0, t1, t;
@@ -977,9 +988,9 @@ void SendToDAC(int r)  // original Mehrdad's function
 	dif3 = fabs(DAC[r][2] - DAC[last_r][2])/n;
 
 	// x? this part need for sending correct value in first loop
-	DAC[3][0] = DAC[last_r][0];
-	DAC[3][1] = DAC[last_r][1];
-	DAC[3][2] = DAC[last_r][2];
+	DAC[4][0] = DAC[last_r][0];
+	DAC[4][1] = DAC[last_r][1];
+	DAC[4][2] = DAC[last_r][2];
 
 	/* this case will never heppen?
 	if(r == 3){
@@ -990,40 +1001,40 @@ void SendToDAC(int r)  // original Mehrdad's function
 	for(int i = 1; i <= n; i++){
 
 		if(DAC[r][0] > DAC[last_r][0]){
-			DAC[3][0] += dif1;
+			DAC[4][0] += dif1;
 		}else{
-			DAC[3][0] -= dif1;
+			DAC[4][0] -= dif1;
 		}
 		if(DAC[r][1] > DAC[last_r][1]){
-			DAC[3][1] += dif2;
+			DAC[4][1] += dif2;
 		}else{
-			DAC[3][1] -= dif2;
+			DAC[4][1] -= dif2;
 		}
 		if(DAC[r][2] > DAC[last_r][2]){
-			DAC[3][2] += dif3;
+			DAC[4][2] += dif3;
 		}else{
-			DAC[3][2] -= dif3;
+			DAC[4][2] -= dif3;
 		}
 
 		for(int j = 0; j < 3; j++){
 			  state = 1;
 			  switch(j){
 				  case 0:
-					  if(DAC[3][j] >= 0){
+					  if(DAC[4][j] >= 0){
 						  HAL_GPIO_WritePin(DIR1_GPIO_Port, DIR1_Pin, GPIO_PIN_SET);
 					  }else{
 						  HAL_GPIO_WritePin(DIR1_GPIO_Port, DIR1_Pin, GPIO_PIN_RESET);
 					  }
 					  break;
 				  case 1:
-					  if(DAC[3][j] >= 0){
+					  if(DAC[4][j] >= 0){
 						  HAL_GPIO_WritePin(DIR2_GPIO_Port, DIR2_Pin, GPIO_PIN_SET);
 					  }else{
 						  HAL_GPIO_WritePin(DIR2_GPIO_Port, DIR2_Pin, GPIO_PIN_RESET);
 					  }
 					  break;
 				  case 2:
-					  if(DAC[3][j] >= 0){
+					  if(DAC[4][j] >= 0){
 						  HAL_GPIO_WritePin(DIR3_GPIO_Port, DIR3_Pin, GPIO_PIN_SET);
 					  }else{
 						  HAL_GPIO_WritePin(DIR3_GPIO_Port, DIR3_Pin, GPIO_PIN_RESET);
@@ -1031,10 +1042,10 @@ void SendToDAC(int r)  // original Mehrdad's function
 					  break;
 			  }
 
-			  if(fabs(DAC[3][j]) > v_ref){
+			  if(fabs(DAC[4][j]) > v_ref){
 				  d_in = 0xffff;
 			  }else{
-				  d_in = abs(round((DAC[3][j]/v_ref) * max_dec));
+				  d_in = abs(round((DAC[4][j]/v_ref) * max_dec));
 			  }
 
 			  SetDAC(j, d_in);
@@ -1059,6 +1070,10 @@ void update_array(){
   DAC[2][1] = par.s2.v2.val;
   DAC[2][2] = par.s2.v3.val;
   DAC[2][3] = par.s2.t.val;
+  DAC[3][0] = par.s3.v1.val;
+  DAC[3][1] = par.s3.v2.val;
+  DAC[3][2] = par.s3.v3.val;
+  DAC[3][3] = par.s3.t.val;
 }
 
 void ExtractMessage(char* rxBuffer, char* txBuffer)

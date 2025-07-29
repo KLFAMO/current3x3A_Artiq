@@ -49,6 +49,7 @@ typedef struct {
     ttlstate s0;
     ttlstate s1;
     ttlstate s2;
+    ttlstate s3;
     value state;
     value save;
     value load;
