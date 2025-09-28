@@ -122,7 +122,7 @@ void setParam(value *p, double val)
 
 void initInterface(void)
 {
-  par.version = 2; // version of parameters structure, increment if structure changes
+  par.version = 3; // version of parameters structure, increment if structure changes
   par.ver = (value){.val = 2, .min = 0, .max = 100};
   par.mode = (value){.val = 0, .min = 0, .max = 0};
   par.state = (value){.val = 3, .min = 0, .max = 3};
@@ -138,6 +138,26 @@ void initInterface(void)
   par.s2.v2 = (value){.val = 0, .min = -3, .max = 3};
   par.s2.v3 = (value){.val = 0, .min = -3, .max = 3};
   par.s2.t = (value){.val = 1, .min = 1, .max = 50};
+  par.s3.v1 = (value){.val = 0, .min = -3, .max = 3};
+  par.s3.v2 = (value){.val = 0, .min = -3, .max = 3};
+  par.s3.v3 = (value){.val = 0, .min = -3, .max = 3};
+  par.s3.t = (value){.val = 1, .min = 1, .max = 50};
+  par.s4.v1 = (value){.val = 0, .min = -3, .max = 3};
+  par.s4.v2 = (value){.val = 0, .min = -3, .max = 3};
+  par.s4.v3 = (value){.val = 0, .min = -3, .max = 3};
+  par.s4.t = (value){.val = 1, .min = 1, .max = 50};
+  par.s5.v1 = (value){.val = 0, .min = -3, .max = 3};
+  par.s5.v2 = (value){.val = 0, .min = -3, .max = 3};
+  par.s5.v3 = (value){.val = 0, .min = -3, .max = 3};
+  par.s5.t = (value){.val = 1, .min = 1, .max = 50};
+  par.s6.v1 = (value){.val = 0, .min = -3, .max = 3};
+  par.s6.v2 = (value){.val = 0, .min = -3, .max = 3};
+  par.s6.v3 = (value){.val = 0, .min = -3, .max = 3};
+  par.s6.t = (value){.val = 1, .min = 1, .max = 50};
+  par.s7.v1 = (value){.val = 0, .min = -3, .max = 3};
+  par.s7.v2 = (value){.val = 0, .min = -3, .max = 3};
+  par.s7.v3 = (value){.val = 0, .min = -3, .max = 3};
+  par.s7.t = (value){.val = 1, .min = 1, .max = 50};
   par.save = (value){.val = 0, .min = 0, .max = 1};
   par.load = (value){.val = 0, .min = 0, .max = 1};
 }
