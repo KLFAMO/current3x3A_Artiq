@@ -36,6 +36,7 @@
 #define FLASH_WORD_SIZE        (32)  // Flash word = 256-bit = 32 bytes
 #define BUFFER_SIZE 100
 #define MAX(a,b) (((a)>(b))?(a):(b))
+#define NUMBER_OF_STATES 8
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -78,23 +79,19 @@ uint16_t d_in;
 
 		row 0 for DAC1: X1, Y1, Z1, T1
 		row 1 for DAC2: X2, Y2, Z2, T2
-		row 2 for DAC3: X3, Y3, Z3, T3
-		row 3 for transitions between states
+		...
 
 		X,Y,Z are voltage value in volt and T is time in ms
 
 */
-double DAC[4][4] = {
-		{0.0, 0.0, 0.0, 1},
-		{0.0, 0.0, 0.0, 1},
-		{0.0, 0.0, 0.0, 1},
-		{0.0, 0.0, 0.0, 1} // <- this row is used for transitions between states
+double DAC[NUMBER_OF_STATES][4] = {
+    [0 ... NUMBER_OF_STATES-1] = {0.0, 0.0, 0.0, 1.0}
 };
+
+double TDAC[4] = {0.0, 0.0, 0.0, 1}; // <- this tab is used for transitions between states
 const double v_ref = 3.0;
 const int max_dec = 65536;
 int last_r = 3;
-
-
 
 void Flash_Write_Params(uint32_t address, parameters *data) {
   HAL_FLASH_Unlock();  // Odblokowanie pamięci flash
@@ -980,9 +977,9 @@ void SendToDAC(int r)  // original Mehrdad's function
 	dif3 = fabs(DAC[r][2] - DAC[last_r][2])/n;
 
 	// x? this part need for sending correct value in first loop
-	DAC[3][0] = DAC[last_r][0];
-	DAC[3][1] = DAC[last_r][1];
-	DAC[3][2] = DAC[last_r][2];
+	TDAC[0] = DAC[last_r][0];
+	TDAC[1] = DAC[last_r][1];
+	TDAC[2] = DAC[last_r][2];
 
 	/* this case will never heppen?
 	if(r == 3){
@@ -993,40 +990,40 @@ void SendToDAC(int r)  // original Mehrdad's function
 	for(int i = 1; i <= n; i++){
 
 		if(DAC[r][0] > DAC[last_r][0]){
-			DAC[3][0] += dif1;
+			TDAC[0] += dif1;
 		}else{
-			DAC[3][0] -= dif1;
+			TDAC[0] -= dif1;
 		}
 		if(DAC[r][1] > DAC[last_r][1]){
-			DAC[3][1] += dif2;
+			TDAC[1] += dif2;
 		}else{
-			DAC[3][1] -= dif2;
+			TDAC[1] -= dif2;
 		}
 		if(DAC[r][2] > DAC[last_r][2]){
-			DAC[3][2] += dif3;
+			TDAC[2] += dif3;
 		}else{
-			DAC[3][2] -= dif3;
+			TDAC[2] -= dif3;
 		}
 
 		for(int j = 0; j < 3; j++){
 			  state = 1;
 			  switch(j){
 				  case 0:
-					  if(DAC[3][j] >= 0){
+					  if(TDAC[j] >= 0){
 						  HAL_GPIO_WritePin(DIR1_GPIO_Port, DIR1_Pin, GPIO_PIN_SET);
 					  }else{
 						  HAL_GPIO_WritePin(DIR1_GPIO_Port, DIR1_Pin, GPIO_PIN_RESET);
 					  }
 					  break;
 				  case 1:
-					  if(DAC[3][j] >= 0){
+					  if(TDAC[j] >= 0){
 						  HAL_GPIO_WritePin(DIR2_GPIO_Port, DIR2_Pin, GPIO_PIN_SET);
 					  }else{
 						  HAL_GPIO_WritePin(DIR2_GPIO_Port, DIR2_Pin, GPIO_PIN_RESET);
 					  }
 					  break;
 				  case 2:
-					  if(DAC[3][j] >= 0){
+					  if(TDAC[j] >= 0){
 						  HAL_GPIO_WritePin(DIR3_GPIO_Port, DIR3_Pin, GPIO_PIN_SET);
 					  }else{
 						  HAL_GPIO_WritePin(DIR3_GPIO_Port, DIR3_Pin, GPIO_PIN_RESET);
@@ -1034,10 +1031,10 @@ void SendToDAC(int r)  // original Mehrdad's function
 					  break;
 			  }
 
-			  if(fabs(DAC[3][j]) > v_ref){
+			  if(fabs(TDAC[j]) > v_ref){
 				  d_in = 0xffff;
 			  }else{
-				  d_in = abs(round((DAC[3][j]/v_ref) * max_dec));
+				  d_in = abs(round((TDAC[j]/v_ref) * max_dec));
 			  }
 
 			  SetDAC(j, d_in);
