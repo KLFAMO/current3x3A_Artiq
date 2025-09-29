@@ -76,22 +76,18 @@ int state;
 uint16_t d_in;
 
 /* create an array for DAC's values:
-
 		row 0 for DAC1: X1, Y1, Z1, T1
 		row 1 for DAC2: X2, Y2, Z2, T2
 		...
-
 		X,Y,Z are voltage value in volt and T is time in ms
-
 */
 double DAC[NUMBER_OF_STATES][4] = {
     [0 ... NUMBER_OF_STATES-1] = {0.0, 0.0, 0.0, 1.0}
 };
-
 double TDAC[4] = {0.0, 0.0, 0.0, 1}; // <- this tab is used for transitions between states
 const double v_ref = 3.0;
 const int max_dec = 65536;
-int last_r = 3;
+int last_r = NUMBER_OF_STATES;
 
 void Flash_Write_Params(uint32_t address, parameters *data) {
   HAL_FLASH_Unlock();  // Odblokowanie pamięci flash
@@ -162,6 +158,7 @@ int ExtractMessageOld(char* msg, char* out);
 void ExtractMessage(char* rxBuffer, char* txBuffer);
 void arrayToString(double DAC[4][4], char *result);
 void update_array();
+static inline uint8_t ttl_bit(GPIO_TypeDef *port, uint16_t pin);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -899,42 +896,31 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+static inline uint8_t ttl_bit(GPIO_TypeDef *port, uint16_t pin) {
+    return (HAL_GPIO_ReadPin(port, pin) == GPIO_PIN_SET) ? 1u : 0u;
+}
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	/*
-	 * In Artiq version, there are 7 input TTLs.
-	 * TTL1, TTL2 are used to set state (TODO: add TTL3-6)
+	 * In Artiq version, there are 7 input TTLs. (but we use only 4 of them)
+	 * TTL1, TTL2 and TTL3 are used to select state (0-7)
 	 * TTL0 is used to trigger state change
 	 */
 
   if(GPIO_Pin==TTL0_Pin)
   {
-	  par.state.val=3;
-	  if(HAL_GPIO_ReadPin(TTL1_GPIO_Port, TTL1_Pin) == GPIO_PIN_RESET &&
-		 HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_RESET
-	  ){
-		  // state 1 row 0 in the DAC's array
-		  //if(last_r != 0){
-			  SendToDAC(0);
-			  par.state.val=0;
-		  //}
-	  }else if(HAL_GPIO_ReadPin(TTL1_GPIO_Port, TTL1_Pin) == GPIO_PIN_SET &&
-			  HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_RESET
-	  ){
-		  // state 2 row 1 in the DAC's array
-		  if(last_r != 1){
-			  SendToDAC(1);
-		  }
-		  par.state.val=1;
-	  }else if(HAL_GPIO_ReadPin(TTL1_GPIO_Port, TTL1_Pin) == GPIO_PIN_RESET &&
-				 HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_SET
-				 ){
-		  // state 3 row 2 in the DAC's array
-		  if(last_r != 2){
-			  SendToDAC(2);
-		  }
-		  par.state.val=2;
-	  }
+	  par.state.val=NUMBER_OF_STATES;
+    uint8_t state =
+        (ttl_bit(TTL3_GPIO_Port, TTL3_Pin) << 2) |
+        (ttl_bit(TTL2_GPIO_Port, TTL2_Pin) << 1) |
+        (ttl_bit(TTL1_GPIO_Port, TTL1_Pin) << 0); // LSB = TTL1
+
+    if (state != last_r) {
+        SendToDAC(state);
+        last_r = state;
+    }
+    par.state.val = state;
   }
 }
 
@@ -1047,18 +1033,17 @@ void SendToDAC(int r)  // original Mehrdad's function
 }
 
 void update_array(){
-  DAC[0][0] = par.s0.v1.val;
-  DAC[0][2] = par.s0.v3.val;
-  DAC[0][1] = par.s0.v2.val;
-  DAC[0][3] = par.s0.t.val;
-  DAC[1][0] = par.s1.v1.val;
-  DAC[1][1] = par.s1.v2.val;
-  DAC[1][2] = par.s1.v3.val;
-  DAC[1][3] = par.s1.t.val;
-  DAC[2][0] = par.s2.v1.val;
-  DAC[2][1] = par.s2.v2.val;
-  DAC[2][2] = par.s2.v3.val;
-  DAC[2][3] = par.s2.t.val;
+  const typeof(par.s0)* S[NUMBER_OF_STATES] = {
+        &par.s0, &par.s1, &par.s2, &par.s3,
+        &par.s4, &par.s5, &par.s6, &par.s7
+    };
+
+    for (int i = 0; i < NUMBER_OF_STATES; ++i) {
+        DAC[i][0] = S[i]->v1.val;
+        DAC[i][1] = S[i]->v2.val;
+        DAC[i][2] = S[i]->v3.val;
+        DAC[i][3] = S[i]->t.val;
+    }
 }
 
 void ExtractMessage(char* rxBuffer, char* txBuffer)
