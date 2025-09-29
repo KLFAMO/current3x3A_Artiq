@@ -122,10 +122,10 @@ void setParam(value *p, double val)
 
 void initInterface(void)
 {
-  par.version = 3; // version of parameters structure, increment if structure changes
+  par.version = 4; // version of parameters structure, increment if structure changes
   par.ver = (value){.val = 2, .min = 0, .max = 100};
   par.mode = (value){.val = 0, .min = 0, .max = 0};
-  par.state = (value){.val = 3, .min = 0, .max = 3};
+  par.state = (value){.val = 0, .min = 0, .max = 7};
   par.s0.v1 = (value){.val = 0, .min = -3, .max = 3};
   par.s0.v2 = (value){.val = 0, .min = -3, .max = 3};
   par.s0.v3 = (value){.val = 0, .min = -3, .max = 3};
