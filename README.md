@@ -65,6 +65,8 @@ Example:
 
 `STATE ?` - display current ttl state 
 
+Commands can be joined using `;` separator: ex. `s1:v2 2.1; s1:t 3` (max 100 characters)
+
 # Issues
 
 Please add your comments in the `Issues` Github section (at the top of this page).

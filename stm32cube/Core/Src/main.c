@@ -992,7 +992,7 @@ void SendToDAC(int r)  // original Mehrdad's function
 		}
 
 		for(int j = 0; j < 3; j++){
-			  state = 1;
+			  state = 1; // <- not sure why it is here
 			  switch(j){
 				  case 0:
 					  if(TDAC[j] >= 0){
