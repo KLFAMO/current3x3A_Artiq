@@ -967,7 +967,6 @@ void SendToDAC(int r)  // original Mehrdad's function
     TDAC[k] = DAC[last_r][k];
   }
 
-//	t0 = HAL_GetTick();
 	for(int i = 1; i <= n; i++){
 
     for(int k = 0; k < 3; k++) {
@@ -976,29 +975,7 @@ void SendToDAC(int r)  // original Mehrdad's function
 
 		for(int j = 0; j < 3; j++){
 			  state = 1;
-			  switch(j){
-				  case 0:
-					  if(TDAC[j] >= 0){
-						  HAL_GPIO_WritePin(DIR1_GPIO_Port, DIR1_Pin, GPIO_PIN_SET);
-					  }else{
-						  HAL_GPIO_WritePin(DIR1_GPIO_Port, DIR1_Pin, GPIO_PIN_RESET);
-					  }
-					  break;
-				  case 1:
-					  if(TDAC[j] >= 0){
-						  HAL_GPIO_WritePin(DIR2_GPIO_Port, DIR2_Pin, GPIO_PIN_SET);
-					  }else{
-						  HAL_GPIO_WritePin(DIR2_GPIO_Port, DIR2_Pin, GPIO_PIN_RESET);
-					  }
-					  break;
-				  case 2:
-					  if(TDAC[j] >= 0){
-						  HAL_GPIO_WritePin(DIR3_GPIO_Port, DIR3_Pin, GPIO_PIN_SET);
-					  }else{
-						  HAL_GPIO_WritePin(DIR3_GPIO_Port, DIR3_Pin, GPIO_PIN_RESET);
-					  }
-					  break;
-			  }
+				HAL_GPIO_WritePin(t_DIR_GPIO_Port[j], t_DIR_Pin[j],  (TDAC[j] >= 0) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 
 			  if(fabs(TDAC[j]) > v_ref){
 				  d_in = 0xffff;
@@ -1009,9 +986,6 @@ void SendToDAC(int r)  // original Mehrdad's function
 			  SetDAC(j, d_in);
 		}
 	}
-
-//	t1 = HAL_GetTick();
-//	t = t1 - t0;
 	last_r = r;
 }
 
