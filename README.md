@@ -22,13 +22,14 @@ Water cooling.
 
 `TTL0` - triger, rising edge triggers current state
 
-`TTL1`, `TTL2` - determines current state TTL1 is the least significant bit.   
-(`TTL1`=0, `TTL2`=0) -> `state 0`  
-(`TTL1`=1, `TTL2`=0) -> `state 1`  
-(`TTL1`=0, `TTL2`=1) -> `state 2`
+`TTL1`, `TTL2`, `TTL3` - determines current state TTL1 is the least significant bit.   
+(`TTL1`=0, `TTL2`=0, `TTL3`=0) -> `state 0`  
+(`TTL1`=1, `TTL2`=0, `TTL3`=0) -> `state 1`  
+(`TTL1`=0, `TTL2`=1, `TTL3`=0) -> `state 2`  
+...  
+(`TTL1`=1, `TTL2`=1, `TTL3`=1) -> `state 7`
 
-States 3, 4, 5 ... are not implemented yet.  
-Just in case, please terminate `TTL1` or `TTL2` if not used/connected.
+TTLs inputs are configurated in pull-down mode.
 
 # User Interface
 
@@ -49,7 +50,7 @@ nc 192.168.3.96 10
 
 ## Commands
 
-There are 3 ttl states available, s0 (ttl=000), s1 (ttl=001), s2 (ttl=010).
+There are 8 ttl states available, s0 (ttl=000), s1 (ttl=001), ..., s7 (ttl=111).
 
 For each state, there are parameters: v1 (current in 1st coil), v2 (current in 2nd coil), v3 (current in 3th coil), t (time in ms of ramp before reaching these values). Current can be set between -3A to 3A. Minimum time t is 1ms.
 
@@ -65,9 +66,12 @@ Example:
 
 `STATE ?` - display current ttl state 
 
+Commands can be joined using `;` separator: ex. `s1:v2 2.1; s1:t 3` (max 100 characters in one message)
+
 # Issues
 
 Please add your comments in the `Issues` Github section (at the top of this page).
 
 ### Known issues
 - the current direction is opposite to set current
+- communication issues when not nc in linux is used
