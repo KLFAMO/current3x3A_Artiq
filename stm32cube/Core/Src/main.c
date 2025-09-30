@@ -929,6 +929,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
         SendToDAC(state);
         last_r = state;
         just_started = 0;
+      }
     }
     par.state.val = state;
   }
@@ -1043,18 +1044,17 @@ void SendToDAC(int r)  // original Mehrdad's function
 }
 
 void update_array(){
-  DAC[0][0] = par.s0.v1.val;
-  DAC[0][2] = par.s0.v3.val;
-  DAC[0][1] = par.s0.v2.val;
-  DAC[0][3] = par.s0.t.val;
-  DAC[1][0] = par.s1.v1.val;
-  DAC[1][1] = par.s1.v2.val;
-  DAC[1][2] = par.s1.v3.val;
-  DAC[1][3] = par.s1.t.val;
-  DAC[2][0] = par.s2.v1.val;
-  DAC[2][1] = par.s2.v2.val;
-  DAC[2][2] = par.s2.v3.val;
-  DAC[2][3] = par.s2.t.val;
+  const typeof(par.s0)* S[NUMBER_OF_STATES] = {
+        &par.s0, &par.s1, &par.s2, &par.s3,
+        &par.s4, &par.s5, &par.s6, &par.s7
+    };
+
+    for (int i = 0; i < NUMBER_OF_STATES; ++i) {
+        DAC[i][0] = S[i]->v1.val;
+        DAC[i][1] = S[i]->v2.val;
+        DAC[i][2] = S[i]->v3.val;
+        DAC[i][3] = S[i]->t.val;
+    }
 }
 
 void ExtractMessage(char* rxBuffer, char* txBuffer)
