@@ -959,35 +959,20 @@ void SendToDAC(int r)  // original Mehrdad's function
 	/* n is a number of steps in entire transition (assuming 58 steps per 1 ms) */
 
   double dif[3];
-
-	/* difx is single step voltage change for channel x */
-	dif[0] = fabs(DAC[r][0] - DAC[last_r][0])/n;
-	dif[1] = fabs(DAC[r][1] - DAC[last_r][1])/n;
-	dif[2] = fabs(DAC[r][2] - DAC[last_r][2])/n;
-
-	// x? this part need for sending correct value in first loop
-	TDAC[0] = DAC[last_r][0];
-	TDAC[1] = DAC[last_r][1];
-	TDAC[2] = DAC[last_r][2];
+  
+  for (int k = 0; k < 3; k++) {
+    /* difx is single step voltage change for channel x */
+    dif[k]  = fabs(DAC[r][k] - DAC[last_r][k]) / n;
+    // x? this part need for sending correct value in first loop
+    TDAC[k] = DAC[last_r][k];
+  }
 
 //	t0 = HAL_GetTick();
 	for(int i = 1; i <= n; i++){
 
-		if(DAC[r][0] > DAC[last_r][0]){
-			TDAC[0] += dif[0];
-		}else{
-			TDAC[0] -= dif[0];
-		}
-		if(DAC[r][1] > DAC[last_r][1]){
-			TDAC[1] += dif[1];
-		}else{
-			TDAC[1] -= dif[1];
-		}
-		if(DAC[r][2] > DAC[last_r][2]){
-			TDAC[2] += dif[2];
-		}else{
-			TDAC[2] -= dif[2];
-		}
+    for(int k = 0; k < 3; k++) {
+      TDAC[k] += (DAC[r][k] > DAC[last_r][k]) ? dif[k] : -dif[k];
+    }
 
 		for(int j = 0; j < 3; j++){
 			  state = 1;
