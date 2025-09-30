@@ -39,6 +39,7 @@
 #define FLASH_WORD_SIZE        (32)  // Flash word = 256-bit = 32 bytes
 #define BUFFER_SIZE 100
 #define MAX(a,b) (((a)>(b))?(a):(b))
+#define NUMBER_OF_STATES 8
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -76,6 +77,7 @@ const osThreadAttr_t interfaceTask_attributes = {
 char spi_buf[30];
 int state;
 uint16_t d_in;
+int just_started = 1; // flag to indicate the first run
 
 /* create an array for DAC's values:
 
@@ -93,6 +95,8 @@ double DAC[4][4] = {
 		{0.0, 0.0, 0.0, 1},
 		{0.0, 0.0, 0.0, 1} // <- this row is used for transitions between states
 };
+GPIO_TypeDef* t_DIR_GPIO_Port[3] = {DIR1_GPIO_Port, DIR2_GPIO_Port, DIR3_GPIO_Port};
+uint16_t t_DIR_Pin[3] = {DIR1_Pin, DIR2_Pin, DIR3_Pin};
 const double v_ref = 3.0;
 const int max_dec = 65536;
 int last_r = 3;
@@ -168,6 +172,7 @@ int ExtractMessageOld(char* msg, char* out);
 void ExtractMessage(char* rxBuffer, char* txBuffer);
 void arrayToString(double DAC[4][4], char *result);
 void update_array();
+static inline uint8_t ttl_bit(GPIO_TypeDef *port, uint16_t pin);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -899,6 +904,10 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+static inline uint8_t ttl_bit(GPIO_TypeDef *port, uint16_t pin) {
+    return (HAL_GPIO_ReadPin(port, pin) == GPIO_PIN_SET) ? 1u : 0u;
+}
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	/*
@@ -909,32 +918,19 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
   if(GPIO_Pin==TTL0_Pin)
   {
-	  par.state.val=3;
-	  if(HAL_GPIO_ReadPin(TTL1_GPIO_Port, TTL1_Pin) == GPIO_PIN_RESET &&
-		 HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_RESET
-	  ){
-		  // state 1 row 0 in the DAC's array
-		  //if(last_r != 0){
-			  SendToDAC(0);
-			  par.state.val=0;
-		  //}
-	  }else if(HAL_GPIO_ReadPin(TTL1_GPIO_Port, TTL1_Pin) == GPIO_PIN_SET &&
-			  HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_RESET
-	  ){
-		  // state 2 row 1 in the DAC's array
-		  if(last_r != 1){
-			  SendToDAC(1);
-		  }
-		  par.state.val=1;
-	  }else if(HAL_GPIO_ReadPin(TTL1_GPIO_Port, TTL1_Pin) == GPIO_PIN_RESET &&
-				 HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_SET
-				 ){
-		  // state 3 row 2 in the DAC's array
-		  if(last_r != 2){
-			  SendToDAC(2);
-		  }
-		  par.state.val=2;
-	  }
+	    par.state.val=NUMBER_OF_STATES;
+    uint8_t state =
+        (ttl_bit(TTL3_GPIO_Port, TTL3_Pin) << 2) |
+        (ttl_bit(TTL2_GPIO_Port, TTL2_Pin) << 1) |
+        (ttl_bit(TTL1_GPIO_Port, TTL1_Pin) << 0); // LSB = TTL1
+
+    if (state != last_r || just_started) {
+      if (state != last_r) {
+        SendToDAC(state);
+        last_r = state;
+        just_started = 0;
+    }
+    par.state.val = state;
   }
 }
 
