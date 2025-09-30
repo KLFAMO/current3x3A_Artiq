@@ -234,6 +234,8 @@ int main(void)
 	SetDAC(2, 0);
 	SetDAC(3, 0);
 
+  update_array();
+
 	// DIR SET means: positive and DIR RESET means: negative
 	HAL_GPIO_WritePin(DIR1_GPIO_Port, DIR1_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(DIR2_GPIO_Port, DIR2_Pin, GPIO_PIN_SET);
