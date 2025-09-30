@@ -95,8 +95,6 @@ const double v_ref = 3.0;
 const int max_dec = 65536;
 int last_r = 3;
 
-
-
 void Flash_Write_Params(uint32_t address, parameters *data) {
   HAL_FLASH_Unlock();  // Odblokowanie pamięci flash
 
@@ -960,12 +958,12 @@ void SendToDAC(int r)  // original Mehrdad's function
 	int n = round(DAC[r][3]*2);	// 58 to apply values to DAC
 	/* n is a number of steps in entire transition (assuming 58 steps per 1 ms) */
 
-	double dif1, dif2, dif3;
+  double dif[3];
 
 	/* difx is single step voltage change for channel x */
-	dif1 = fabs(DAC[r][0] - DAC[last_r][0])/n;
-	dif2 = fabs(DAC[r][1] - DAC[last_r][1])/n;
-	dif3 = fabs(DAC[r][2] - DAC[last_r][2])/n;
+	dif[0] = fabs(DAC[r][0] - DAC[last_r][0])/n;
+	dif[1] = fabs(DAC[r][1] - DAC[last_r][1])/n;
+	dif[2] = fabs(DAC[r][2] - DAC[last_r][2])/n;
 
 	// x? this part need for sending correct value in first loop
 	TDAC[0] = DAC[last_r][0];
@@ -976,19 +974,19 @@ void SendToDAC(int r)  // original Mehrdad's function
 	for(int i = 1; i <= n; i++){
 
 		if(DAC[r][0] > DAC[last_r][0]){
-			TDAC[0] += dif1;
+			TDAC[0] += dif[0];
 		}else{
-			TDAC[0] -= dif1;
+			TDAC[0] -= dif[0];
 		}
 		if(DAC[r][1] > DAC[last_r][1]){
-			TDAC[1] += dif2;
+			TDAC[1] += dif[1];
 		}else{
-			TDAC[1] -= dif2;
+			TDAC[1] -= dif[1];
 		}
 		if(DAC[r][2] > DAC[last_r][2]){
-			TDAC[2] += dif3;
+			TDAC[2] += dif[2];
 		}else{
-			TDAC[2] -= dif3;
+			TDAC[2] -= dif[2];
 		}
 
 		for(int j = 0; j < 3; j++){
