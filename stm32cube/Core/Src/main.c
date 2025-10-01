@@ -975,7 +975,7 @@ void SendToDAC(int r)  // original Mehrdad's function
 
 		for(int j = 0; j < 3; j++){
 			  state = 1;
-				HAL_GPIO_WritePin(t_DIR_GPIO_Port[j], t_DIR_Pin[j],  (TDAC[j] >= 0) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(t_DIR_GPIO_Port[j], t_DIR_Pin[j],  (TDAC[j] >= 0) ? GPIO_PIN_RESET : GPIO_PIN_SET);
 
 			  if(fabs(TDAC[j]) > v_ref){
 				  d_in = 0xffff;

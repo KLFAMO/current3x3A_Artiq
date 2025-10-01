@@ -93,11 +93,9 @@ The firmware file to upload is located here: firmware/current3x3A_Artiq.hex
 STM32_Programmer_CLI -c port=SWD -w firmware/current3x3A_Artiq.hex -v -rst
 ```
 
-
 # Issues
 
 Please add your comments in the `Issues` Github section (at the top of this page).
 
 ### Known issues
-- the current direction is opposite to set current
 - communication issues when not nc in linux is used
