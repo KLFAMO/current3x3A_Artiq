@@ -68,6 +68,26 @@ Example:
 
 Commands can be joined using `;` separator: ex. `s1:v2 2.1; s1:t 3` (max 100 characters in one message)
 
+## Using STM32CubeProgrammer (GUI)
+
+1. Connect the STM32 board to your computer via **ST-LINK**.  
+2. Open **STM32CubeProgrammer**.  
+3. Select **ST-LINK** as the interface and click **Connect**.  
+4. In **Erasing & Programming**:  
+   - Select `firmware/current3x3A_Artiq.hex`.  
+   - Enable **Verify programming** (recommended).  
+   - Click **Start Programming**.  
+5. The board will restart with the new firmware.  
+
+---
+
+## Using STM32CubeProgrammer (CLI)
+
+```bash
+STM32_Programmer_CLI -c port=SWD -w firmware/current3x3A_Artiq.hex -v -rst
+```
+
+
 # Issues
 
 Please add your comments in the `Issues` Github section (at the top of this page).
