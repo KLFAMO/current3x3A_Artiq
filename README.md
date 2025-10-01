@@ -68,6 +68,12 @@ Example:
 
 Commands can be joined using `;` separator: ex. `s1:v2 2.1; s1:t 3` (max 100 characters in one message)
 
+---
+
+# Flashing Firmware to STM32 with ST-LINK
+
+The firmware file to upload is located here: firmware/current3x3A_Artiq.hex
+
 ## Using STM32CubeProgrammer (GUI)
 
 1. Connect the STM32 board to your computer via **ST-LINK**.  
