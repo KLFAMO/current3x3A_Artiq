@@ -93,6 +93,16 @@ The firmware file to upload is located here: firmware/current3x3A_Artiq.hex
 STM32_Programmer_CLI -c port=SWD -w firmware/current3x3A_Artiq.hex -v -rst
 ```
 
+# License
+
+[MIT](https://opensource.org/licenses/MIT)
+
+
+# Acknowledgments
+This work has received funding from the European Partnership on Metrology, co-financed by the European Union’s Horizon Europe Research and Innovation Programme and by the Participating States, under grant number 22IEM01 TOCK.
+
+![badge](images/Acknowledgement%20badge.png)
+
 # Issues
 
 Please add your comments in the `Issues` Github section (at the top of this page).
