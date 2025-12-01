@@ -39,6 +39,7 @@
 #define FLASH_WORD_SIZE        (32)  // Flash word = 256-bit = 32 bytes
 #define BUFFER_SIZE 100
 #define MAX(a,b) (((a)>(b))?(a):(b))
+#define NUMBER_OF_STATES 8
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -76,28 +77,23 @@ const osThreadAttr_t interfaceTask_attributes = {
 char spi_buf[30];
 int state;
 uint16_t d_in;
+int just_started = 1; // flag to indicate the first run
 
 /* create an array for DAC's values:
-
 		row 0 for DAC1: X1, Y1, Z1, T1
 		row 1 for DAC2: X2, Y2, Z2, T2
-		row 2 for DAC3: X3, Y3, Z3, T3
-		row 3 for transitions between states
-
+		...
 		X,Y,Z are voltage value in volt and T is time in ms
-
 */
-double DAC[4][4] = {
-		{0.0, 0.0, 0.0, 1},
-		{0.0, 0.0, 0.0, 1},
-		{0.0, 0.0, 0.0, 1},
-		{0.0, 0.0, 0.0, 1} // <- this row is used for transitions between states
+double DAC[NUMBER_OF_STATES][4] = {
+    [0 ... NUMBER_OF_STATES-1] = {0.0, 0.0, 0.0, 1.0}
 };
+double TDAC[4] = {0.0, 0.0, 0.0, 1}; // <- this tab is used for transitions between states
+GPIO_TypeDef* t_DIR_GPIO_Port[3] = {DIR1_GPIO_Port, DIR2_GPIO_Port, DIR3_GPIO_Port};
+uint16_t t_DIR_Pin[3] = {DIR1_Pin, DIR2_Pin, DIR3_Pin};
 const double v_ref = 3.0;
 const int max_dec = 65536;
 int last_r = 3;
-
-
 
 void Flash_Write_Params(uint32_t address, parameters *data) {
   HAL_FLASH_Unlock();  // Odblokowanie pamięci flash
@@ -168,6 +164,7 @@ int ExtractMessageOld(char* msg, char* out);
 void ExtractMessage(char* rxBuffer, char* txBuffer);
 void arrayToString(double DAC[4][4], char *result);
 void update_array();
+static inline uint8_t ttl_bit(GPIO_TypeDef *port, uint16_t pin);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -899,6 +896,10 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+static inline uint8_t ttl_bit(GPIO_TypeDef *port, uint16_t pin) {
+    return (HAL_GPIO_ReadPin(port, pin) == GPIO_PIN_SET) ? 1u : 0u;
+}
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	/*
@@ -909,32 +910,20 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
   if(GPIO_Pin==TTL0_Pin)
   {
-	  par.state.val=3;
-	  if(HAL_GPIO_ReadPin(TTL1_GPIO_Port, TTL1_Pin) == GPIO_PIN_RESET &&
-		 HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_RESET
-	  ){
-		  // state 1 row 0 in the DAC's array
-		  //if(last_r != 0){
-			  SendToDAC(0);
-			  par.state.val=0;
-		  //}
-	  }else if(HAL_GPIO_ReadPin(TTL1_GPIO_Port, TTL1_Pin) == GPIO_PIN_SET &&
-			  HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_RESET
-	  ){
-		  // state 2 row 1 in the DAC's array
-		  if(last_r != 1){
-			  SendToDAC(1);
-		  }
-		  par.state.val=1;
-	  }else if(HAL_GPIO_ReadPin(TTL1_GPIO_Port, TTL1_Pin) == GPIO_PIN_RESET &&
-				 HAL_GPIO_ReadPin(TTL2_GPIO_Port, TTL2_Pin) == GPIO_PIN_SET
-				 ){
-		  // state 3 row 2 in the DAC's array
-		  if(last_r != 2){
-			  SendToDAC(2);
-		  }
-		  par.state.val=2;
-	  }
+	    par.state.val=NUMBER_OF_STATES;
+    uint8_t state =
+        (ttl_bit(TTL3_GPIO_Port, TTL3_Pin) << 2) |
+        (ttl_bit(TTL2_GPIO_Port, TTL2_Pin) << 1) |
+        (ttl_bit(TTL1_GPIO_Port, TTL1_Pin) << 0); // LSB = TTL1
+
+    if (state != last_r || just_started) {
+      if (state != last_r) {
+        SendToDAC(state);
+        last_r = state;
+        just_started = 0;
+      }
+    }
+    par.state.val = state;
   }
 }
 
@@ -969,96 +958,49 @@ void SendToDAC(int r)  // original Mehrdad's function
 	int n = round(DAC[r][3]*2);	// 58 to apply values to DAC
 	/* n is a number of steps in entire transition (assuming 58 steps per 1 ms) */
 
-	double dif1, dif2, dif3;
+  double dif[3];
+  
+  for (int k = 0; k < 3; k++) {
+    /* difx is single step voltage change for channel x */
+    dif[k]  = fabs(DAC[r][k] - DAC[last_r][k]) / n;
+    // x? this part need for sending correct value in first loop
+    TDAC[k] = DAC[last_r][k];
+  }
 
-	/* difx is single step voltage change for channel x */
-	dif1 = fabs(DAC[r][0] - DAC[last_r][0])/n;
-	dif2 = fabs(DAC[r][1] - DAC[last_r][1])/n;
-	dif3 = fabs(DAC[r][2] - DAC[last_r][2])/n;
-
-	// x? this part need for sending correct value in first loop
-	DAC[3][0] = DAC[last_r][0];
-	DAC[3][1] = DAC[last_r][1];
-	DAC[3][2] = DAC[last_r][2];
-
-	/* this case will never heppen?
-	if(r == 3){
-		n = 1;
-	} */
-
-//	t0 = HAL_GetTick();
 	for(int i = 1; i <= n; i++){
 
-		if(DAC[r][0] > DAC[last_r][0]){
-			DAC[3][0] += dif1;
-		}else{
-			DAC[3][0] -= dif1;
-		}
-		if(DAC[r][1] > DAC[last_r][1]){
-			DAC[3][1] += dif2;
-		}else{
-			DAC[3][1] -= dif2;
-		}
-		if(DAC[r][2] > DAC[last_r][2]){
-			DAC[3][2] += dif3;
-		}else{
-			DAC[3][2] -= dif3;
-		}
+    for(int k = 0; k < 3; k++) {
+      TDAC[k] += (DAC[r][k] > DAC[last_r][k]) ? dif[k] : -dif[k];
+    }
 
 		for(int j = 0; j < 3; j++){
 			  state = 1;
-			  switch(j){
-				  case 0:
-					  if(DAC[3][j] >= 0){
-						  HAL_GPIO_WritePin(DIR1_GPIO_Port, DIR1_Pin, GPIO_PIN_SET);
-					  }else{
-						  HAL_GPIO_WritePin(DIR1_GPIO_Port, DIR1_Pin, GPIO_PIN_RESET);
-					  }
-					  break;
-				  case 1:
-					  if(DAC[3][j] >= 0){
-						  HAL_GPIO_WritePin(DIR2_GPIO_Port, DIR2_Pin, GPIO_PIN_SET);
-					  }else{
-						  HAL_GPIO_WritePin(DIR2_GPIO_Port, DIR2_Pin, GPIO_PIN_RESET);
-					  }
-					  break;
-				  case 2:
-					  if(DAC[3][j] >= 0){
-						  HAL_GPIO_WritePin(DIR3_GPIO_Port, DIR3_Pin, GPIO_PIN_SET);
-					  }else{
-						  HAL_GPIO_WritePin(DIR3_GPIO_Port, DIR3_Pin, GPIO_PIN_RESET);
-					  }
-					  break;
-			  }
+				HAL_GPIO_WritePin(t_DIR_GPIO_Port[j], t_DIR_Pin[j],  (TDAC[j] >= 0) ? GPIO_PIN_RESET : GPIO_PIN_SET);
 
-			  if(fabs(DAC[3][j]) > v_ref){
+			  if(fabs(TDAC[j]) > v_ref){
 				  d_in = 0xffff;
 			  }else{
-				  d_in = abs(round((DAC[3][j]/v_ref) * max_dec));
+				  d_in = abs(round((TDAC[j]/v_ref) * max_dec));
 			  }
 
 			  SetDAC(j, d_in);
 		}
 	}
-
-//	t1 = HAL_GetTick();
-//	t = t1 - t0;
 	last_r = r;
 }
 
 void update_array(){
-  DAC[0][0] = par.s0.v1.val;
-  DAC[0][2] = par.s0.v3.val;
-  DAC[0][1] = par.s0.v2.val;
-  DAC[0][3] = par.s0.t.val;
-  DAC[1][0] = par.s1.v1.val;
-  DAC[1][1] = par.s1.v2.val;
-  DAC[1][2] = par.s1.v3.val;
-  DAC[1][3] = par.s1.t.val;
-  DAC[2][0] = par.s2.v1.val;
-  DAC[2][1] = par.s2.v2.val;
-  DAC[2][2] = par.s2.v3.val;
-  DAC[2][3] = par.s2.t.val;
+  const typeof(par.s0)* S[NUMBER_OF_STATES] = {
+        &par.s0, &par.s1, &par.s2, &par.s3,
+        &par.s4, &par.s5, &par.s6, &par.s7
+    };
+
+    for (int i = 0; i < NUMBER_OF_STATES; ++i) {
+        DAC[i][0] = S[i]->v1.val;
+        DAC[i][1] = S[i]->v2.val;
+        DAC[i][2] = S[i]->v3.val;
+        DAC[i][3] = S[i]->t.val;
+    }
 }
 
 void ExtractMessage(char* rxBuffer, char* txBuffer)
