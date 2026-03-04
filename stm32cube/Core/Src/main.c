@@ -74,7 +74,7 @@ const osThreadAttr_t interfaceTask_attributes = {
 char spi_buf[30];
 int state;
 uint16_t d_in;
-int just_started = 1; // flag to indicate the first run
+/* `just_started` no longer needed since DAC is updated on every trigger */
 
 /* create an array for DAC's values:
 		row 0 for DAC1: X1, Y1, Z1, T1
@@ -919,13 +919,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
         (ttl_bit(TTL2_GPIO_Port, TTL2_Pin) << 1) |
         (ttl_bit(TTL1_GPIO_Port, TTL1_Pin) << 0); // LSB = TTL1
 
-    if (state != last_r || just_started) {
-      if (state != last_r) {
-        SendToDAC(state);
-        last_r = state;
-        just_started = 0;
-      }
-    }
+    /* always update DAC on trigger, even if state unchanged */
+    SendToDAC(state);
+    last_r = state;
     par.state.val = state;
   }
 }
